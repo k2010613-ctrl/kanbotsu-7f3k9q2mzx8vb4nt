@@ -83,8 +83,9 @@ footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400p
 
   <div class="grp">三脚と車両</div>
   <label class="chk"><input type="checkbox" id="autoTri" checked> 三脚をウォームゾーンの縁に置く（自動）</label>
-  <div class="ctl" id="triCtl"><div class="hd"><span class="nm">三脚〜穴の縁<small>張り出しより外</small></span><span class="vl" id="vTri">— m</span></div><input type="range" id="tri" min="0" max="30" step="0.1" value="10"></div>
-  <div class="ctl"><div class="hd"><span class="nm">三脚の高さ</span><span class="vl" id="vTh">200 cm</span></div><input type="range" id="th" min="150" max="280" step="5" value="200"></div>
+  <div class="ctl" id="triCtl"><div class="hd"><span class="nm">三脚〜穴の縁<small>張り出しより外</small></span><span class="vl" id="vTri">— m</span></div><input type="range" id="tri" min="0" max="45" step="0.1" value="10"></div>
+  <div class="ctl"><div class="hd"><span class="nm">支点Aの高さ<small>三脚・電柱・車上三脚など</small></span><span class="vl" id="vTh">200 cm</span></div><input type="range" id="th" min="150" max="560" step="10" value="200"></div>
+  <div class="ctl"><div class="hd"><span class="nm">支点Bの高さ</span><span class="vl" id="vTh2">200 cm</span></div><input type="range" id="th2" min="150" max="560" step="10" value="200"></div>
   <div class="ctl"><div class="hd"><span class="nm">車両側の角度<small>上限15°</small></span><span class="vl" id="vVa">15°</span></div><input type="range" id="va" min="5" max="25" step="1" value="15"></div>
   <div class="ctl"><div class="hd"><span class="nm">車両フックの高さ</span><span class="vl" id="vVh">30 cm</span></div><input type="range" id="vh" min="0" max="120" step="5" value="30"></div>
 
@@ -101,11 +102,11 @@ footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400p
 <div class="res">
   <div class="card warm"><div class="sl">張り出し（縁から）</div><div class="sv" id="rC">—<small>m</small></div></div>
   <div class="card warm"><div class="sl">ウォームゾーン直径</div><div class="sv" id="rWarm">—<small>m</small></div></div>
-  <div class="card hi"><div class="sl">三脚間</div><div class="sv" id="rSpan">—<small>m</small></div></div>
-  <div class="card"><div class="sl">三脚〜車両</div><div class="sv" id="rVeh">—<small>m</small></div></div>
+  <div class="card hi"><div class="sl">支点間</div><div class="sv" id="rSpan">—<small>m</small></div></div>
+  <div class="card"><div class="sl">支点〜車両（平均）</div><div class="sv" id="rVeh">—<small>m</small></div></div>
   <div class="card hi"><div class="sl">たわみ（中央）</div><div class="sv" id="rSag">—<small>cm</small></div></div>
   <div class="card" id="cClear"><div class="sl">お尻の地上高</div><div class="sv" id="rClear">—<small>cm</small></div></div>
-  <div class="card hi"><div class="sl">三脚の荷重（各）</div><div class="sv" id="rLoad">—<small>kgf</small></div></div>
+  <div class="card hi"><div class="sl">支点の荷重 A / B</div><div class="sv" id="rLoad">—<small>kgf</small></div></div>
   <div class="card"><div class="sl">荷重時のロープ張力</div><div class="sv" id="rT">—<small>kgf</small></div></div>
   <div class="card verdict" id="verdict"></div>
 </div>
@@ -116,7 +117,7 @@ footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400p
 (function(){
 const $=id=>document.getElementById(id);
 let K=700/0.19; const LIMIT_VEH=15, LIMIT_T=700;
-const ids=['depth','dia','ang','tri','th','va','vh','w','t','sus'];
+const ids=['depth','dia','ang','tri','th','th2','va','vh','w','t','sus'];
 ids.forEach(i=>$(i).addEventListener('input',update));
 $('autoTri').addEventListener('change',update);
 document.querySelectorAll('#angSeg button').forEach(b=>b.addEventListener('click',()=>{$('ang').value=b.dataset.v;update();}));
@@ -132,54 +133,57 @@ function sagLock(D,W,T0,tails){ // centre load, locked winch, rope stiffness K, 
 }
 
 function update(){
-  const depth=v('depth'),dia=v('dia'),ang=v('ang'),thcm=v('th'),va=v('va'),vhcm=v('vh'),W=v('w'),T0=v('t'),sus=v('sus');
+  const depth=v('depth'),dia=v('dia'),ang=v('ang'),thcm=v('th'),th2cm=v('th2'),va=v('va'),vhcm=v('vh'),W=v('w'),T0=v('t'),sus=v('sus');
   document.querySelectorAll('#angSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===ang));
   const c=Math.round(depth/Math.tan(ang*Math.PI/180)*10)/10;
-  $('tri').max=Math.max(30,c);
+  $('tri').max=Math.max(45,c);
   const auto=$('autoTri').checked;
   if(auto){$('tri').value=c;} $('triCtl').classList.toggle('off',auto); $('tri').disabled=auto;
   const tri=Math.max(v('tri'),0);
-  const span=dia+2*tri, warm=dia+2*c;
-  const vehDist=((thcm-vhcm)/100)/Math.tan(va*Math.PI/180);
-  const r=sagLock(span,W,T0,2*vehDist), h=r.h, T=r.T;
-  const th1=Math.atan2(h,span/2), vaRad=va*Math.PI/180;
-  const load=2*T*Math.sin((th1+vaRad)/2);
-  const clear=thcm-h*100-sus;
+  const span=Math.min(dia+2*tri,50), warm=dia+2*c;
+  const tanv=Math.tan(va*Math.PI/180);
+  const vehDist=((thcm-vhcm)/100)/tanv, vehDist2=((th2cm-vhcm)/100)/tanv;
+  const chordMid=(thcm+th2cm)/2;
+  const r=sagLock(span,W,T0,vehDist+vehDist2), h=r.h, T=r.T;
+  const vaRad=va*Math.PI/180, yP=chordMid/100-h;
+  const thA=Math.atan2(thcm/100-yP,span/2), thB=Math.atan2(th2cm/100-yP,span/2);
+  const loadA=2*T*Math.sin((thA+vaRad)/2), loadB=2*T*Math.sin((thB+vaRad)/2), load=Math.max(loadA,loadB);
+  const clear=chordMid-h*100-sus;
   const vehOver=va>LIMIT_VEH+0.001, triIn=!auto && tri<c-0.05;
   // labels
   $('vDepth').textContent=depth.toFixed(1)+' m'; $('vDia').textContent=dia.toFixed(1)+' m'; $('vAng').textContent=ang+'°';
   $('vTri').textContent=tri.toFixed(1)+' m'; $('vTri').className='vl'+(triIn?' warn':'');
-  $('vTh').textContent=thcm+' cm'; $('vVa').textContent=va+'°'; $('vVa').className='vl'+(vehOver?' warn':''); $('vVh').textContent=vhcm+' cm';
+  $('vTh').textContent=thcm+' cm'; $('vTh2').textContent=th2cm+' cm'; $('vVa').textContent=va+'°'; $('vVa').className='vl'+(vehOver?' warn':''); $('vVh').textContent=vhcm+' cm';
   $('vW').textContent=W+' kg'; $('vT').textContent=T0+' kgf'; $('vSus').textContent=sus+' cm';
   const set=(id,val,n)=>{const e=$(id);const u=e.querySelector('small');e.textContent=val.toFixed(n);e.appendChild(u);};
-  set('rC',c,1); set('rWarm',warm,1); set('rSpan',span,1); set('rVeh',vehDist,1); set('rSag',h*100,0); set('rClear',clear,0); set('rLoad',load,0); set('rT',T,0);
+  set('rC',c,1); set('rWarm',warm,1); set('rSpan',span,1); set('rVeh',(vehDist+vehDist2)/2,1); set('rSag',h*100,0); set('rClear',clear,0); $('rLoad').innerHTML=Math.round(loadA)+'<small>kgf</small> / '+Math.round(loadB)+'<small>kgf</small>'; set('rT',T,0);
   $('cClear').className='card'+(clear<=0?' ng':'');
   // verdict
   let j,mk,txt;
-  if(clear<=0){j='ng';mk='×';txt='このスパンでは救助者が接地する。三脚を近づける（縁の外で）か、三脚を高くする';}
-  else if(span<=20){j='ok';mk='〇';txt='ハイライン可（スパン20m以内）';}
-  else if(span<=25){j='caution';mk='△';txt='スパン20〜25m。介添え無しなら中央まで至れる程度';}
-  else{j='ng';mk='×';txt='スパン25m超。ハイラインは範囲外。バスケットやクレーンを検討';}
+  if(clear<=0){j='ng';mk='×';txt='救助者が接地する。支点を近づける（縁の外で）か、支点を高くする';}
+  else if(clear<30){j='caution';mk='△';txt='地上高30cm未満。介添えの余地なし';}
+  else{j='ok';mk='〇';txt='中央でも地上高を確保';}
+  if(span>25) txt+='　※スパン25m超は当隊検証（〜25m）の範囲外。高い支点の設営と荷重は別途確認';
   let extra=[];
   if(triIn) extra.push('三脚がウォームゾーン内');
   if(vehOver) extra.push('車両側角度が15°超');
   $('verdict').className='card verdict '+j;
-  $('verdict').innerHTML=`<div class="mk">${mk}</div><div class="tx"><b>三脚間 ${span.toFixed(1)} m・${W} kg</b>${txt}${extra.length?'　⚠ '+extra.join('・'):''}</div>`;
-  draw({depth,dia,c,tri,span,vehDist,thcm,vhcm,h,sus,load,clear,vehOver,triIn,T,T0});
+  $('verdict').innerHTML=`<div class="mk">${mk}</div><div class="tx"><b>支点間 ${span.toFixed(1)} m・支点 ${thcm}/${th2cm} cm・${W} kg</b>${txt}${extra.length?'　⚠ '+extra.join('・'):''}</div>`;
+  draw({depth,dia,c,tri,span,vehDist,vehDist2,thcm,th2cm,vhcm,h,sus,loadA,loadB,clear,vehOver,triIn,T,T0});
 }
 
 function draw(p){
   const L=70, GY=195, VB=1000;
-  const totalM=p.vehDist*2+p.span;
+  const totalM=p.vehDist+p.vehDist2+p.span;
   const pxM=Math.min(52,(VB-2*L)/totalM);
-  const pxV=58;
+  const pxV=Math.min(58,150/(Math.max(p.thcm,p.th2cm)/100));
   const X=m=>L+m*pxM, Y=hm=>GY-hm*pxV;
   const FZ=1;
   const mTA=p.vehDist, mTB=p.vehDist+p.span, mVB=totalM;
   const xVA=X(0), xTA=X(mTA), xTB=X(mTB), xVB=X(mVB);
-  const yVeh=Y(p.vhcm/100), yTri=Y(p.thcm/100);
+  const yVeh=Y(p.vhcm/100), yTri=Y(p.thcm/100), yTri2=Y(p.th2cm/100), yMid=(yTri+yTri2)/2;
   const sagPx=Math.min(p.h*pxV,170);
-  const cx=X(mTA+p.span/2), py=yTri+sagPx;
+  const cx=X(mTA+p.span/2), py=yMid+sagPx;
   const hc=mTA+p.span/2, hR=p.dia/2;
   const hL=X(hc-hR), hRx=X(hc+hR), wL=X(hc-hR-p.c), wR=X(hc+hR+p.c);
   const rowWarm=GY+100,rowSpan=GY+135,rowVeh=GY+170;
@@ -196,15 +200,17 @@ function draw(p){
     s+=`<g><rect x="${xv-35}" y="${yVeh-38}" width="70" height="34" rx="5" fill="#252b30" stroke="#3a4147" stroke-width="1.5"/><circle cx="${xv-20*sgn}" cy="${yVeh-4}" r="5" fill="#14171a" stroke="#3a4147" stroke-width="1.3"/><circle cx="${xv+18*sgn}" cy="${yVeh-4}" r="5" fill="#14171a" stroke="#3a4147" stroke-width="1.3"/></g><circle cx="${xv+22*sgn}" cy="${yVeh}" r="4.5" fill="${vc}"/>`;
   }
   const lc=p.vehOver?'#f0555a':'#c9b896';
-  s+=`<line x1="${xVA+22}" y1="${yVeh}" x2="${xTA}" y2="${yTri}" stroke="${lc}" stroke-width="3" stroke-linecap="round"/><line x1="${xTB}" y1="${yTri}" x2="${xVB-22}" y2="${yVeh}" stroke="${lc}" stroke-width="3" stroke-linecap="round"/>`;
-  s+=dim(xVA,xTA,rowVeh,'三脚⇄車両 '+p.vehDist.toFixed(1)+'m',lc)+dim(xTB,xVB,rowVeh,'三脚⇄車両 '+p.vehDist.toFixed(1)+'m',lc);
+  s+=`<line x1="${xVA+22}" y1="${yVeh}" x2="${xTA}" y2="${yTri}" stroke="${lc}" stroke-width="3" stroke-linecap="round"/><line x1="${xTB}" y1="${yTri2}" x2="${xVB-22}" y2="${yVeh}" stroke="${lc}" stroke-width="3" stroke-linecap="round"/>`;
+  s+=dim(xVA,xTA,rowVeh,'三脚⇄車両 '+p.vehDist.toFixed(1)+'m',lc)+dim(xTB,xVB,rowVeh,'三脚⇄車両 '+p.vehDist2.toFixed(1)+'m',lc);
   const tc=p.triIn?'#f0555a':'#5fd8c9';
-  for(const tx of [xTA,xTB]){
-    s+=`<g stroke="#9aa3ab" stroke-width="4" stroke-linecap="round"><line x1="${tx-30}" y1="${GY}" x2="${tx}" y2="${yTri}"/><line x1="${tx+30}" y1="${GY}" x2="${tx}" y2="${yTri}"/><line x1="${tx-13}" y1="${GY-72}" x2="${tx+15}" y2="${GY-80}"/></g><circle cx="${tx}" cy="${yTri}" r="6" fill="${tc}"/>`;
-    s+=`<text x="${tx}" y="${yTri-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${tc}">${Math.round(p.load)}kgf</text>`;
+  for(const [tx,ty,hc,ld] of [[xTA,yTri,p.thcm,p.loadA],[xTB,yTri2,p.th2cm,p.loadB]]){
+    const lw=Math.min(30,(GY-ty)*0.42), by=GY-(GY-ty)*0.36;
+    s+=`<g stroke="#9aa3ab" stroke-width="4" stroke-linecap="round"><line x1="${tx-lw}" y1="${GY}" x2="${tx}" y2="${ty}"/><line x1="${tx+lw}" y1="${GY}" x2="${tx}" y2="${ty}"/><line x1="${tx-lw*0.45}" y1="${by+3}" x2="${tx+lw*0.5}" y2="${by-3}"/></g><circle cx="${tx}" cy="${ty}" r="6" fill="${tc}"/>`;
+    s+=`<text x="${tx}" y="${ty-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${tc}">${Math.round(ld)}kgf</text>`;
+    s+=`<text x="${tx}" y="${GY+16}" text-anchor="middle" font-size="10" fill="#9aa3ab">${hc}cm</text>`;
   }
-  s+=dim(xTA,xTB,rowSpan,'三脚間 '+p.span.toFixed(1)+'m','#5fd8c9');
-  s+=`<path d="M ${xTA} ${yTri} L ${cx} ${py} L ${xTB} ${yTri}" fill="none" stroke="#c9b896" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  s+=dim(xTA,xTB,rowSpan,'支点間 '+p.span.toFixed(1)+'m','#5fd8c9');
+  s+=`<path d="M ${xTA} ${yTri} L ${cx} ${py} L ${xTB} ${yTri2}" fill="none" stroke="#c9b896" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
   const by=py+p.sus/100*pxV, bad=p.clear<=0, cc=bad?'#f0555a':'#5fd8c9';
   s+=`<circle cx="${cx}" cy="${py}" r="3" fill="#9aa3ab"/><line x1="${cx}" y1="${py}" x2="${cx}" y2="${by}" stroke="#9aa3ab" stroke-width="1.6" stroke-dasharray="1 2.5"/>`;
   s+=`<line x1="${cx}" y1="${by}" x2="${cx}" y2="${GY}" stroke="${cc}" stroke-width="1.3" stroke-dasharray="2 3" opacity=".75"/>`;
