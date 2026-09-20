@@ -84,9 +84,9 @@ footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400p
   <div class="grp">三脚と車両</div>
   <label class="chk"><input type="checkbox" id="autoTri" checked> 三脚をウォームゾーンの縁に置く（自動）</label>
   <div class="ctl" id="triCtl"><div class="hd"><span class="nm">三脚〜穴の縁<small>張り出しより外</small></span><span class="vl" id="vTri">— m</span></div><input type="range" id="tri" min="0" max="45" step="0.1" value="10"></div>
-  <div class="ctl"><div class="hd"><span class="nm">支点Aの高さ<small>三脚・電柱・車上三脚など</small></span><span class="vl" id="vTh">200 cm</span></div><input type="range" id="th" min="150" max="560" step="10" value="200"></div>
-  <div class="ctl"><div class="hd"><span class="nm">支点Bの高さ</span><span class="vl" id="vTh2">200 cm</span></div><input type="range" id="th2" min="150" max="560" step="10" value="200"></div>
-  <div class="ctl"><div class="hd"><span class="nm">車両側の角度<small>上限15°</small></span><span class="vl" id="vVa">15°</span></div><input type="range" id="va" min="5" max="25" step="1" value="15"></div>
+  <div class="ctl"><div class="hd"><span class="nm">支点Aの高さ<small>三脚・電柱・車上三脚など</small></span><span class="vl" id="vTh">200 cm</span></div><input type="range" id="th" min="150" max="900" step="10" value="200"></div>
+  <div class="ctl"><div class="hd"><span class="nm">支点Bの高さ</span><span class="vl" id="vTh2">200 cm</span></div><input type="range" id="th2" min="150" max="900" step="10" value="200"></div>
+  <div class="ctl"><div class="hd"><span class="nm">車両側の角度<small>上限15°</small></span><span class="vl" id="vVa">15°</span></div><input type="range" id="va" min="5" max="45" step="1" value="15"></div>
   <div class="ctl"><div class="hd"><span class="nm">車両フックの高さ</span><span class="vl" id="vVh">30 cm</span></div><input type="range" id="vh" min="0" max="120" step="5" value="30"></div>
 
   <div class="grp">荷重とロープ</div>
@@ -176,7 +176,7 @@ function draw(p){
   const L=70, GY=195, VB=1000;
   const totalM=p.vehDist+p.vehDist2+p.span;
   const pxM=Math.min(52,(VB-2*L)/totalM);
-  const pxV=Math.min(58,150/(Math.max(p.thcm,p.th2cm)/100));
+  const pxV=Math.min(58,165/(Math.max(p.thcm,p.th2cm)/100));
   const X=m=>L+m*pxM, Y=hm=>GY-hm*pxV;
   const FZ=1;
   const mTA=p.vehDist, mTB=p.vehDist+p.span, mVB=totalM;
