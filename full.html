@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>道路陥没救助 計測ツール</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1214">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="陥没計算">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#0f1214;--panel:#171b1f;--panel2:#1e2328;--line:#2b3238;--text:#e8ebee;--dim:#a3adb5;--faint:#6b7680;
+  --in:#5fd8c9;--out:#f5b942;--ng:#f0555a;--ok:#5fd8a0;--warm:#e0803a;--rope:#c9b896;
+  --font:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+header{display:flex;align-items:center;justify-content:space-between;padding:max(8px,env(safe-area-inset-top)) 14px 8px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:16px;font-weight:700}
+.legend{font-size:11px;color:var(--dim);display:flex;gap:10px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+main{max-width:1100px;margin:0 auto;padding:10px 12px 30px}
+.phases{display:flex;gap:6px;margin-bottom:8px}
+.phases button{flex:1;padding:8px 4px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.phases button.on{color:var(--text);border-color:var(--out);background:#2a2418}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;position:relative}
+.fig{overflow-x:auto}
+.fig svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.fig.zoom svg{width:200%}
+.zoomBtn{position:absolute;right:10px;top:10px;z-index:2;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:inherit;font-size:12px}
+.hint{font-size:11.5px;color:var(--faint);text-align:center;margin:6px 0 2px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chips button{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--in);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.chips button.on{background:#12262a;border-color:var(--in)}
+.chips button.lim{color:var(--ng)}
+.chips button.as{color:#8fb3ff}
+.chips button.as.on{background:#16203a;border-color:#8fb3ff}
+.panel.as{border-color:#8fb3ff}
+.panel.as h3{color:#8fb3ff}
+.as-grid{display:grid;grid-template-columns:1fr;gap:6px}
+.as-c{background:var(--panel2);border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.55}
+.as-c b.h{display:block;font-size:11px;color:var(--dim);font-weight:600;margin-bottom:2px}
+.as-c .v{font-size:16px;font-weight:700}
+.as-c.hot{border-left:4px solid #f0555a}.as-c.warm{border-left:4px solid var(--warm)}.as-c.cold{border-left:4px solid #5fd8c9}
+.as-c ul{margin:4px 0 0;padding-left:16px}.as-c li{margin:2px 0}
+.ok2{color:var(--ok);font-weight:700}.cau2{color:#f0c14b;font-weight:700}.ng2{color:var(--ng);font-weight:700}
+.as-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}.as-tbl td,.as-tbl th{padding:3px 4px;text-align:right;border-bottom:1px solid var(--line)}.as-tbl th:first-child,.as-tbl td:first-child{text-align:left}.as-tbl tr.now td{color:var(--warm);font-weight:700}
+.chips button.lim.on{background:#2a1618;border-color:var(--ng)}
+.panel{background:var(--panel);border:1px solid var(--in);border-radius:12px;padding:10px 14px;margin-bottom:10px}
+.panel.lim{border-color:var(--ng)}
+.panel h3{margin:0 0 4px;font-size:14px;color:var(--in)}
+.panel.lim h3{color:var(--ng)}
+.ctl{padding:4px 0}
+.ctl .hd{display:flex;justify-content:space-between;align-items:baseline}
+.ctl .nm{font-size:13.5px;font-weight:600}
+.ctl .nm small{font-weight:400;color:var(--faint);font-size:11px;margin-left:4px}
+.ctl .vl{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--in)}
+.panel.lim .ctl .vl{color:var(--ng)}
+.ctl input[type=range]{width:100%;margin:2px 0 0;accent-color:var(--in);height:28px}
+.panel.lim input[type=range]{accent-color:var(--ng)}
+.ctl.off{opacity:.4;pointer-events:none}
+.seg{display:flex;gap:6px;margin-top:4px}
+.seg button{flex:1;padding:7px 4px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.seg button.on{color:var(--in);border-color:var(--in);background:#12262a}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);padding:4px 0}
+.chk input{width:18px;height:18px;accent-color:var(--in)}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.card .sl{font-size:11px;color:var(--dim)}
+.card .sv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;color:var(--out)}
+.card .sv small{font-size:11px;font-weight:400;color:var(--dim);margin-left:2px}
+.card.ok{border-color:var(--ok)} .card.ok .sv{color:var(--ok)}
+.card.ng{border-color:var(--ng)} .card.ng .sv{color:var(--ng)}
+.card .fix{font-size:11px;color:var(--ng);margin-top:3px;line-height:1.4}
+.note{font-size:11px;color:var(--faint);margin-top:10px;line-height:1.6}
+@media (min-width:900px){
+  main{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+  .left{grid-column:1} .right{grid-column:2;position:sticky;top:10px}
+  .res{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header><h1><a href="index.html" style="color:var(--dim);text-decoration:none;font-size:14px;margin-right:8px">‹ 選択</a>道路陥没救助 計測ツール</h1>
+<div class="legend"><span><i style="background:var(--in)"></i>決めるもの</span><span><i style="background:var(--out)"></i>出てくるもの</span><span><i style="background:var(--ng)"></i>上限</span></div></header>
+<main>
+<div class="left">
+  <div class="phases" id="phases">
+    <button data-p="1" class="on">① 隊員が進入</button><button data-p="2">② 中央で2名</button><button data-p="3">③ 要救助者を救出中</button>
+  </div>
+  <div class="fig" id="fig"><button class="zoomBtn" id="zoomBtn">拡大</button><svg id="svg" viewBox="0 0 1000 360" aria-label="配置図"></svg></div>
+  <div class="hint">絵の中の <span style="color:var(--in)">●</span> をタップすると、その項目を動かせる</div>
+  <div class="chips" id="chips">
+    <button data-k="assess" class="as">状況評価</button><button data-k="hole">穴</button><button data-k="ang">安息角</button><button data-k="pos">支点の位置</button><button data-k="supA">支点A高さ</button><button data-k="supB">支点B高さ</button><button data-k="veh">車両</button><button data-k="rope">ロープ・張力</button><button data-k="person">人</button><button data-k="lim" class="lim">上限</button>
+  </div>
+</div>
+<div class="right">
+  <div id="panelWrap"></div>
+  <div class="res" id="res"></div>
+  <div class="note" id="foot">区域・活動レベル・可否の区分は「地下閉鎖空間における救助活動マニュアル」（令和8年3月 消防庁）による。安息角30°・20°、展張力700kgf、三脚定格、ロープの伸び率（三つ打ちナイロン12mm：当隊実測 700kgfで19%、追加伸びは無負荷30分で700→650kgfの実測から）は当隊の条件。他本部は自隊の値に置き換える。計算値は当隊実測（三脚間17.5m・150kg）と±10%以内で一致。展張後ウインチ固定として計算し、2点荷重は張力一様の弦として扱う。示すのは目安の数値で、活動を決めるものではない。判断は現場指揮者が行う。</div>
+</div>
+</main>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const S={depth:3.7,dia:5,ang:20,auto:true,tri:10,hA:200,hB:200,va:15,vh:30,T0:700,rope:'nylon',W1:65,W2:70,sus:100,x2:5,limLoad:350,limClear:0,limSF:4,creep:1.0};
+let phase=1, sel=null;
+const ROPE={nylon:{K:700/0.19,bs:2800,n:'三つ打ちナイロン12mm'},wire:{K:700/0.003,bs:4000,n:'ワイヤー'}};
+const D2R=Math.PI/180;
+
+/* ---------- physics ---------- */
+function multiSag(D,loads,T0,tails,K,creep){
+  const y=(T,x)=>loads.reduce((s,l)=>s+l.W*Math.min(x,l.x)*(D-Math.max(x,l.x))/(T*D),0);
+  const len=T=>{const xs=[0,...loads.map(l=>l.x).sort((a,b)=>a-b),D];let L=0;for(let i=1;i<xs.length;i++){const dx=xs[i]-xs[i-1],dy=y(T,xs[i])-y(T,xs[i-1]);L+=Math.hypot(dx,dy);}return L;};
+  let T=T0;
+  if(K<1e6){const Lt=D+tails,Lu=Lt/(1+T0/K)+Lt*(creep||0);let lo=T0*.5,hi=T0*8;for(let i=0;i<70;i++){const m=(lo+hi)/2;(tails+len(m)>Lu*(1+m/K))?lo=m:hi=m;}T=(lo+hi)/2;}
+  const sA=loads.reduce((a,l)=>a+l.W*(D-l.x),0)/(T*D), sB=loads.reduce((a,l)=>a+l.W*l.x,0)/(T*D);
+  return {T,y:x=>y(T,x),thA:Math.atan(sA),thB:Math.atan(sB)};
+}
+function calc(s,ph){
+  const c=Math.round(s.depth/Math.tan(s.ang*D2R)*10)/10;
+  const tri=s.auto?c:s.tri;
+  const D=Math.min(s.dia+2*tri,50), warm=s.dia+2*c;
+  const tanv=Math.tan(s.va*D2R), vA=((s.hA-s.vh)/100)/tanv, vB=((s.hB-s.vh)/100)/tanv;
+  const chord=(s.hA+s.hB)/2, mid=D/2, x2=Math.min(Math.max(s.x2,0.1),D-0.1);
+  const loads = ph===1?[{x:mid,W:s.W1}] : ph===2?[{x:mid,W:s.W1+s.W2}] : [{x:mid,W:s.W1},{x:x2,W:s.W2}];
+  const m=multiSag(D,loads,s.T0,vA+vB,ROPE[s.rope].K,0);
+  const mc=multiSag(D,loads,s.T0,vA+vB,ROPE[s.rope].K,s.creep/100);
+  const Kr=ROPE[s.rope].K, Lt=D+vA+vB, LuC=Lt/(1+s.T0/Kr)+Lt*s.creep/100, Tun=Math.max(0,Kr*(Lt/LuC-1));
+  const sagC=mc.y(mid), clearC=chord-sagC*100-s.sus;
+  const sagP=m.y(mid), sagV=ph===3?m.y(x2):(ph===2?sagP:null);
+  // angles at supports incl. height difference
+  const yP=chord/100-sagP, thA=Math.atan2(s.hA/100-yP, mid)*(ph===3?0:1)+ (ph===3?m.thA:0);
+  const thB=ph===3?m.thB:Math.atan2(s.hB/100-yP, mid);
+  const vr=s.va*D2R;
+  const loadA=2*m.T*Math.sin((thA+vr)/2), loadB=2*m.T*Math.sin((thB+vr)/2);
+  const clear=chord-sagP*100-s.sus, clearV=sagV==null?null:chord-sagV*100-s.sus;
+  const sf=ROPE[s.rope].bs/m.T;
+  return {c,tri,D,warm,vA,vB,chord,mid,x2,T:m.T,sagP,sagV,loadA,loadB,clear,clearV,sf,loads,Tc:mc.T,sagC,clearC,Tun};
+}
+// inverse: find max value of param p (monotonic increasing effect on metric) keeping metric within limit
+function maxParam(p,lo,hi,metric,limit,ph){
+  const test=v=>{const t=Object.assign({},S,{[p]:v});return metric(calc(t,ph))<=limit;};
+  if(!test(lo)) return null; if(test(hi)) return hi;
+  for(let i=0;i<40;i++){const m=(lo+hi)/2; test(m)?lo=m:hi=m;} return lo;
+}
+
+function labelOf(deg){ if(deg>=43&&deg<=47) return '高度化検討会の目安'; if(deg>=28&&deg<=32) return '水分を含まない土質'; if(deg>=18&&deg<=22) return '水分を含む土質'; return ''; }
+function level(depth,radius){ if(depth<=6&&radius<10) return 1; if(depth<=8&&radius<15) return 2; return 3; }
+function assess(s){
+  const side=s.depth/Math.tan(s.ang*D2R), warm=s.dia+side*2, radius=warm/2, lv=level(s.depth,radius), span=warm;
+  const hi= span<=20?['ok2','使える',`スパン${span.toFixed(1)}m。20m以内なので、介添えで中心まで到達できる。`]: span<=25?['cau2','条件付き',`スパン${span.toFixed(1)}m。隊員のみ中心まで。介添えは困難。`]:['ng2','使えない',`スパン${span.toFixed(1)}m。ロープのたわみで接地する。安全管理・監視用としてのみ活用する。`];
+  const lad= radius<=15?['ok2','使える',`半径${radius.toFixed(1)}m。搭乗3名でも作業半径15m以内。`]: radius<=16?['cau2','条件付き',`半径${radius.toFixed(1)}m。搭乗2名までなら作業半径16m。`]:['ng2','使えない',`半径${radius.toFixed(1)}m。バスケットの作業半径を超える。`];
+  const crane= lv===3?['ok2','必要','ハイラインを三脚より上げる必要がある。フックにスリング等で支点を作り、ハイラインそのものを上方へ。']:['','不要（使用も可）','この規模なら三脚またははしご車で対応できる。'];
+  const LV={1:['レベル1','深さ6m以内・半径10m未満','マンホール救助器具のハイライン（水平垂直システム）。三つ打ちロープで実施でき、迅速。'],2:['レベル2','深さ6〜8m・半径10〜15m','はしご車の梯体につるべシステム。車両を危険区域外に置いたまま高さを確保できる。'],3:['レベル3','深さ8〜18m・半径15m以上','救助工作車Ⅲ型のクレーンでハイラインを上げ、スタティックロープの倍力システム。']}[lv];
+  return {side,warm,radius,lv,LV,hi,lad,crane};
+}
+function assessHTML(){
+  const a=assess(S), lab=labelOf(S.ang);
+  const cmp=[45,30,20].map(g=>{const sd=S.depth/Math.tan(g*D2R),wd=S.dia+sd*2;return `<tr class="${Math.abs(g-S.ang)<.5?'now':''}"><td>${g}°</td><td>${sd.toFixed(1)}m</td><td>${wd.toFixed(1)}m</td></tr>`;}).join('');
+  return `<div class="as-grid">
+    <div class="as-c"><b class="h">活動レベル</b><span class="v">${a.LV[0]}</span> <span style="color:var(--dim);font-size:11px">${a.LV[1]}</span><br>${a.LV[2]}</div>
+    <div class="as-c hot"><b class="h">ホットゾーン</b><span class="v">直径 ${S.dia.toFixed(1)}m</span><br>現に陥没している部分。活動隊員のみ進入。地面の下が既に崩落している場合は、崩落の幅をホットゾーンとする。</div>
+    <div class="as-c warm"><b class="h">ウォームゾーン</b><span class="v">直径 ${a.warm.toFixed(1)}m</span><br>穴の縁から外へ <b>${a.side.toFixed(1)}m</b>（${S.ang}°${lab?'・'+lab:''}）。ここが進入統制ライン。フィックス線等の転落防止措置が要る。車両の進入は不可。</div>
+    <div class="as-c cold"><b class="h">コールドゾーン</b><span class="v">直径 ${a.warm.toFixed(1)}m の外</span><br>崩落の恐れのない部分。転落防止措置は不要。</div>
+    <div class="as-c"><b class="h">救出方法の可否</b><ul>
+      <li>マンホール救助器具のハイライン … <span class="${a.hi[0]}">${a.hi[1]}</span><br><span style="color:var(--dim)">${a.hi[2]}</span></li>
+      <li>はしご車のバスケット … <span class="${a.lad[0]}">${a.lad[1]}</span><br><span style="color:var(--dim)">${a.lad[2]}</span></li>
+      <li>救助工作車Ⅲ型のクレーン … <span class="${a.crane[0]}">${a.crane[1]}</span><br><span style="color:var(--dim)">${a.crane[2]}</span></li></ul></div>
+    <div class="as-c"><b class="h">角度を変えるとどうなるか</b><table class="as-tbl"><tr><th>安息角</th><th>縁からの張り出し</th><th>ウォームゾーン直径</th></tr>${cmp}</table><div style="color:var(--dim);margin-top:4px">判断に迷う時は広い方（20°側）を採る。</div></div>
+    <div class="as-c"><b class="h">この段階で必ず確かめること</b><ul>
+      <li>陥没穴の壁面をよく観察する。アスファルトが残っていても、その下は空洞の可能性がある。</li>
+      <li>要救助者の情報（症状・人数・車両の有無・挟まれ状況）</li>
+      <li>上下水道管の埋設状況（漏水・管の破損・埋没）</li>
+      <li>道路のクラック、段差、沈下、たわみ、電柱の傾き</li>
+      <li>有毒ガスの検知（検知器の校正を含む）。硫化水素に留意。</li>
+      <li>土砂流出源の深さが不明な場合は、更なる陥没・崩落を考慮する。</li></ul></div>
+  </div>`;
+}
+/* ---------- panels ---------- */
+const PANELS={
+  hole:{t:'穴',b:()=>`${sl('depth','深さ',1,15,.1,'m')}${sl('dia','直径',1,15,.5,'m')}`},
+  ang:{t:'安息角',b:()=>`<div class="seg" id="angSeg"><button data-v="20">20° 含水</button><button data-v="30">30° 乾燥</button><button data-v="45">45° 目安</button></div>${sl('ang','角度',15,50,1,'°')}`},
+  pos:{t:'支点の位置',b:()=>`<label class="chk"><input type="checkbox" id="autoTri" ${S.auto?'checked':''}> ウォームゾーンの縁に置く（自動）</label>${sl('tri','支点〜穴の縁',0,45,.1,'m','張り出しより内側は赤')}`},
+  supA:{t:'支点Aの高さ',b:()=>sl('hA','三脚・電柱・車上三脚など',150,900,10,'cm')},
+  supB:{t:'支点Bの高さ',b:()=>sl('hB','三脚・電柱・車上三脚など',150,900,10,'cm')},
+  veh:{t:'車両',b:()=>`${sl('va','ロープの角度',5,45,1,'°','上限15°')}${sl('vh','フックの高さ',0,120,5,'cm')}`},
+  rope:{t:'ロープ・張力',b:()=>`<div class="seg" id="ropeSeg"><button data-v="nylon">三つ打ち</button><button data-v="wire">ワイヤー</button></div>${sl('T0','展張力',200,900,10,'kgf','当隊目安700＝破断2,800kgfに対し安全率4')}${sl('creep','時間経過で緩む分',0,5,.1,'%','実測：700で張って30分放置→650kgf ＝ 約1.0%')}`},
+  person:{t:'人',b:()=>`${sl('W1','隊員の体重',40,150,5,'kg')}${sl('W2','要救助者の体重',10,150,5,'kg')}${sl('sus','吊り下げ長',50,150,5,'cm','ロープ〜お尻')}${phase===3?sl('x2','要救助者の位置',0.5,49.5,.5,'m','支点Aから'):''}`},
+  assess:{t:'状況評価（マニュアルの区分）',b:assessHTML,as:true},
+  lim:{t:'上限（ここに収めたい）',b:()=>`${sl('limLoad','三脚の定格荷重',100,1000,10,'kgf')}${sl('limClear','最低地上高',0,150,5,'cm','0＝地面に着かなければよい')}${sl('limSF','ロープ安全率',2,8,.5,'倍')}`,lim:true},
+};
+function sl(k,nm,min,max,step,unit,sub){return `<div class="ctl" data-k="${k}"><div class="hd"><span class="nm">${nm}${sub?`<small>${sub}</small>`:''}</span><span class="vl" id="v_${k}">${fmt(k,unit)}</span></div><input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"></div>`;}
+function fmt(k,unit){const v=S[k];return (Number.isInteger(v)?v:v.toFixed(1))+' '+unit;}
+function showPanel(k){
+  sel=k; const w=$('panelWrap');
+  if(!k){w.innerHTML='';render();return;}
+  const p=PANELS[k];
+  w.innerHTML=`<div class="panel ${p.lim?'lim':''} ${p.as?'as':''}"><h3>${p.t}</h3>${p.b()}</div>`;
+  w.querySelectorAll('input[type=range]').forEach(r=>r.addEventListener('input',()=>{S[r.dataset.k]=parseFloat(r.value);if(r.dataset.k==='tri')S.auto=false;render();}));
+  const a=$('autoTri'); if(a) a.addEventListener('change',()=>{S.auto=a.checked;render();});
+  w.querySelectorAll('#angSeg button').forEach(b=>b.addEventListener('click',()=>{S.ang=+b.dataset.v;render();}));
+  w.querySelectorAll('#ropeSeg button').forEach(b=>b.addEventListener('click',()=>{S.rope=b.dataset.v;render();}));
+  render();
+}
+document.querySelectorAll('#chips button').forEach(b=>b.addEventListener('click',()=>showPanel(sel===b.dataset.k?null:b.dataset.k)));
+if(window.innerWidth<700){$('fig').classList.add('zoom');$('zoomBtn').textContent='全体';}
+$('zoomBtn').addEventListener('click',()=>{const f=$('fig');f.classList.toggle('zoom');$('zoomBtn').textContent=f.classList.contains('zoom')?'全体':'拡大';});
+document.querySelectorAll('#phases button').forEach(b=>b.addEventListener('click',()=>{phase=+b.dataset.p;document.querySelectorAll('#phases button').forEach(x=>x.classList.toggle('on',x===b));if(sel==='person')showPanel('person');else render();}));
+
+/* ---------- render ---------- */
+function render(){
+  const r=calc(S,phase);
+  // sync panel values
+  document.querySelectorAll('#panelWrap .ctl').forEach(c=>{const k=c.dataset.k;const u=c.querySelector('.vl');const unit=u.textContent.split(' ').pop();u.textContent=fmt(k,unit);const inp=c.querySelector('input');if(inp)inp.value=S[k];c.classList.toggle('off',k==='tri'&&S.auto);});
+  document.querySelectorAll('#angSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.ang));
+  document.querySelectorAll('#ropeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.rope));
+  const a=$('autoTri'); if(a) a.checked=S.auto;
+  document.querySelectorAll('#chips button').forEach(b=>b.classList.toggle('on',b.dataset.k===sel));
+  // results with limits
+  const lmax=Math.max(r.loadA,r.loadB);
+  const okLoad=lmax<=S.limLoad+0.5, okClr=r.clear>=S.limClear-0.5&&(r.clearV==null||r.clearV>=S.limClear-0.5), okSF=r.sf>=S.limSF-0.05;
+  let fixLoad='',fixClr='',fixSF='';
+  if(!okLoad){const t=maxParam('T0',200,S.T0,x=>Math.max(x.loadA,x.loadB),S.limLoad,phase),w=maxParam('W2',0,S.W2,x=>Math.max(x.loadA,x.loadB),S.limLoad,phase),v=maxParam('va',5,S.va,x=>Math.max(x.loadA,x.loadB),S.limLoad,phase);
+    fixLoad=[t!=null?`展張力 ${Math.round(t)}kgf以下`:null,w!=null?`要救助者 ${Math.round(w)}kg以下`:null,v!=null?`車両角 ${v.toFixed(0)}°以下`:null].filter(Boolean).join('／')||'この条件では収まらない';}
+  if(!okClr){const w=maxParam('W2',0,S.W2,x=>-Math.min(x.clear,x.clearV==null?1e9:x.clearV),-S.limClear,phase);const h=maxParam('hA',S.hA,900,x=>-Math.min(x.clear,x.clearV==null?1e9:x.clearV),-S.limClear,phase);
+    fixClr=[w!=null?`要救助者 ${Math.round(w)}kg以下`:null,`支点を高く／近づける`].filter(Boolean).join('／');}
+  if(!okSF){fixSF=`展張力 ${Math.round(ROPE[S.rope].bs/S.limSF*S.T0/r.T)}kgf以下`;}
+  $('res').innerHTML=`
+    <div class="card" style="grid-column:1/-1;cursor:pointer" onclick="document.querySelector('#chips button[data-k=assess]').click()"><div class="sl">状況評価 → 活動${assess(S).LV[0]}（${assess(S).LV[1]}）・ウォームゾーン直径 ${r.warm.toFixed(1)}m</div><div class="sv" style="font-size:13px;color:#8fb3ff">ハイライン ${assess(S).hi[1]}／バスケット ${assess(S).lad[1]}／クレーン ${assess(S).crane[1]}　▸ 詳細</div></div>
+    <div class="card"><div class="sl">張り出し（縁から）</div><div class="sv" style="color:var(--warm)">${r.c.toFixed(1)}<small>m</small></div></div>
+    <div class="card"><div class="sl">支点間</div><div class="sv">${r.D.toFixed(1)}<small>m</small></div></div>
+    <div class="card"><div class="sl">支点〜車両 A / B</div><div class="sv">${r.vA.toFixed(1)}<small>m</small> ${r.vB.toFixed(1)}<small>m</small></div></div>
+    <div class="card"><div class="sl">たわみ（隊員${phase===3?'／要救助者':''}）</div><div class="sv">${Math.round(r.sagP*100)}<small>cm</small>${phase===3?' '+Math.round(r.sagV*100)+'<small>cm</small>':''}</div></div>
+    <div class="card ${okClr?'ok':'ng'}"><div class="sl">お尻の地上高（${S.limClear>0?'下限 '+S.limClear+'cm':'接地しなければ可'}）</div><div class="sv">${Math.round(r.clear)}<small>cm</small>${phase===3?' '+Math.round(r.clearV)+'<small>cm</small>':''}</div>${fixClr?`<div class="fix">→ ${fixClr}</div>`:''}</div>
+    <div class="card ${okLoad?'ok':'ng'}"><div class="sl">支点の荷重 A / B（定格 ${S.limLoad}kgf）</div><div class="sv">${Math.round(r.loadA)} / ${Math.round(r.loadB)}<small>kgf</small></div>${fixLoad?`<div class="fix">→ ${fixLoad}</div>`:''}</div>
+    <div class="card ${okSF?'ok':'ng'}"><div class="sl">荷重時の張力・安全率（${S.limSF}以上）</div><div class="sv">${Math.round(r.T)}<small>kgf</small> ${r.sf.toFixed(1)}<small>倍</small></div>${fixSF?`<div class="fix">→ ${fixSF}</div>`:''}</div>
+    <div class="card ${r.clearC>=S.limClear-0.5?'':'ng'}"><div class="sl">時間が経った後（乗ったまま・緩み ${S.creep.toFixed(1)}%）</div><div class="sv">${Math.round(r.sagC*100)}<small>cm</small> ${Math.round(r.Tc)}<small>kgf</small></div><div class="fix" style="color:var(--dim)">地上高 ${Math.round(r.clearC)}cm</div></div>
+    <div class="card"><div class="sl">降ろした後の張力計（無負荷）</div><div class="sv">${Math.round(r.Tun)}<small>kgf</small></div><div class="fix" style="color:var(--dim)">展張力から −${Math.round(S.T0-r.Tun)}kgf。展張力まで再展張すれば戻る</div></div>`;
+  draw(r);
+}
+
+/* ---------- drawing ---------- */
+function draw(r){
+  const VB=1000,L=60,GY=225; const totalM=r.vA+r.vB+r.D;
+  const pxM=Math.min(90,(VB-2*L)/totalM), pxV=Math.min(75,190/(Math.max(S.hA,S.hB)/100));
+  const X=m=>L+m*pxM, Y=h=>GY-h*pxV;
+  const xVA=X(0),xTA=X(r.vA),xTB=X(r.vA+r.D),xVB=X(totalM), yVeh=Y(S.vh/100), yA=Y(S.hA/100), yB=Y(S.hB/100), yMid=(yA+yB)/2;
+  const hc=r.vA+r.D/2, hR=S.dia/2, hL=X(hc-hR), hRx=X(hc+hR), wL=X(hc-hR-r.c), wR=X(hc+hR+r.c), mid=(hL+hRx)/2;
+  const cx=X(hc), py=yMid+Math.min(r.sagP*pxV,190);
+  const H=(k,x,y)=>`<circle class="hd" data-k="${k}" cx="${x}" cy="${y}" r="11" fill="${sel===k?'#12262a':'#0f1214'}" stroke="var(--in)" stroke-width="${sel===k?3:2}" style="cursor:pointer"/>`;
+  const lab=(x,y,t,col,anc='middle',fs=12)=>`<text x="${x}" y="${y}" text-anchor="${anc}" font-size="${fs}" font-weight="700" fill="${col}" font-family="inherit">${t}</text>`;
+  let s=`<defs><pattern id="hz" width="16" height="16" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#4a2f12"/><rect width="8" height="16" fill="#e0803a"/></pattern></defs>`;
+  s+=`<line x1="${L-30}" y1="${GY}" x2="${VB-30}" y2="${GY}" stroke="#3a4147" stroke-width="2"/>`;
+  // limit line (min clearance) across span
+  const yLim=GY-(S.limClear/100)*pxV;
+  s+=`<line x1="${xTA+30}" y1="${yLim}" x2="${xTB-30}" y2="${yLim}" stroke="var(--ng)" stroke-width="1.2" stroke-dasharray="4 4" opacity=".8"/>`+lab(xTA+56,yLim-5,S.limClear>0?`最低地上高 ${S.limClear}cm`:'接地限界','var(--ng)','start',10);
+  // warm zone + hole
+  s+=`<rect x="${wL}" y="${GY-5}" width="${hL-wL}" height="9" fill="url(#hz)"/><rect x="${hRx}" y="${GY-5}" width="${wR-hRx}" height="9" fill="url(#hz)"/>`;
+  const depthPx=Math.min(28+S.depth*6,60), bev=Math.min(16,(hRx-hL)*.3);
+  s+=`<path d="M ${hL} ${GY} L ${hRx} ${GY} L ${hRx-bev} ${GY+depthPx} L ${hL+bev} ${GY+depthPx} Z" fill="#0c0a08" stroke="#4a3f38" stroke-width="1.5"/>`;
+  s+=lab(mid,GY+depthPx+16,`穴 ${S.dia.toFixed(1)}m・深さ ${S.depth.toFixed(1)}m`,'#9aa3ab');
+  s+=lab((wL+hL)/2,GY+22,`張り出し ${r.c.toFixed(1)}m`,'var(--warm)',undefined,11)+lab((hRx+wR)/2,GY+22,`張り出し ${r.c.toFixed(1)}m`,'var(--warm)',undefined,11);
+  // vehicles
+  const vc=S.va>15?'var(--ng)':'var(--rope)';
+  for(const [xv,sg] of [[xVA,1],[xVB,-1]]) s+=`<rect x="${xv-35}" y="${yVeh-38}" width="70" height="34" rx="5" fill="#252b30" stroke="#3a4147" stroke-width="1.5"/><circle cx="${xv-20*sg}" cy="${yVeh-4}" r="5" fill="#14171a" stroke="#3a4147"/><circle cx="${xv+18*sg}" cy="${yVeh-4}" r="5" fill="#14171a" stroke="#3a4147"/>`;
+  s+=`<line x1="${xVA+22}" y1="${yVeh}" x2="${xTA}" y2="${yA}" stroke="${vc}" stroke-width="3" stroke-linecap="round"/><line x1="${xTB}" y1="${yB}" x2="${xVB-22}" y2="${yVeh}" stroke="${vc}" stroke-width="3" stroke-linecap="round"/>`;
+  s+=lab((xVA+xTA)/2,GY+40,`${r.vA.toFixed(1)}m・${S.va}°`,vc,undefined,11)+lab((xTB+xVB)/2,GY+40,`${r.vB.toFixed(1)}m・${S.va}°`,vc,undefined,11);
+  // supports + load gauges
+  const triIn=!S.auto&&S.tri<r.c-0.05;
+  for(const [tx,ty,h,ld,k] of [[xTA,yA,S.hA,r.loadA,'supA'],[xTB,yB,S.hB,r.loadB,'supB']]){
+    const lw=Math.min(30,(GY-ty)*.42);
+    s+=`<g stroke="${triIn?'var(--ng)':'#9aa3ab'}" stroke-width="4" stroke-linecap="round"><line x1="${tx-lw}" y1="${GY}" x2="${tx}" y2="${ty}"/><line x1="${tx+lw}" y1="${GY}" x2="${tx}" y2="${ty}"/></g>`;
+    const over=ld>S.limLoad, gx=tx+(k==='supA'?-46:16), gw=30, frac=Math.min(1,ld/S.limLoad);
+    s+=`<rect x="${gx}" y="${ty-6}" width="${gw}" height="7" rx="2" fill="#2b3238"/><rect x="${gx}" y="${ty-6}" width="${gw*frac}" height="7" rx="2" fill="${over?'var(--ng)':'var(--ok)'}"/>`;
+    s+=lab(tx,ty-16,`${Math.round(ld)}kgf`,over?'var(--ng)':'var(--out)')+lab(tx,GY+14,`${h}cm`,'var(--in)',undefined,10);
+  }
+  s+=lab((xTA+xTB)/2,GY+40,`支点間 ${r.D.toFixed(1)}m`,'var(--in)');
+  // rope
+  const pts=[[xTA,yA]]; const ld=[...r.loads].sort((a,b)=>a.x-b.x);
+  for(const l of ld){const yy=(()=>{const t=l.x/r.D;return yA+(yB-yA)*t+Math.min(calcY(r,l.x)*pxV,190);})();pts.push([X(r.vA+l.x),yy]);}
+  pts.push([xTB,yB]);
+  s+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--rope)" stroke-width="4" stroke-linejoin="round"/>`;
+  // persons
+  for(const l of ld){
+    const px=X(r.vA+l.x), yy=pts.find(p=>Math.abs(p[0]-px)<0.5)[1], by=yy+S.sus/100*pxV;
+    const isV=(phase===3&&Math.abs(l.x-r.x2)<1e-6&&Math.abs(l.x-r.mid)>1e-6);
+    const cl=isV?r.clearV:r.clear, bad=cl<S.limClear;
+    s+=`<line x1="${px}" y1="${yy}" x2="${px}" y2="${by}" stroke="#9aa3ab" stroke-width="1.6" stroke-dasharray="1 2.5"/>`;
+    s+=person(px,by,isV?'#f5b942':'#e8ebee',phase===2);
+    s+=lab(px+12,yy-6,`たわみ ${Math.round(calcY(r,l.x)*100)}cm`,'var(--out)','start',11)+lab(px-14,by+12,`地上高 ${Math.round(cl)}cm`,bad?'var(--ng)':'var(--ok)','end',11);
+    if(isV) s+=H('person',px,by+8);
+  }
+  s+=lab(cx,yMid-8,`張力 ${Math.round(r.T)}kgf`,'var(--out)',undefined,11);
+  // handles
+  s+=H('hole',hRx,GY+depthPx/2)+H('ang',(hRx+wR)/2,GY)+H('pos',xTA,GY)+H('supA',xTA,yA)+H('supB',xTB,yB)+H('veh',xVA+22,yVeh)+H('rope',cx-40,yMid+(py-yMid)*.4);
+  if(!(phase===3)) s+=H('person',cx,py+S.sus/100*pxV+8);
+  s+=H('lim',xTA+42,yLim);
+  $('svg').innerHTML=s;
+  $('svg').querySelectorAll('.hd').forEach(h=>h.addEventListener('click',()=>showPanel(h.dataset.k)));
+}
+function calcY(r,x){ // sag at x for current loads (string model with r.T)
+  return r.loads.reduce((s,l)=>s+l.W*Math.min(x,l.x)*(r.D-Math.max(x,l.x))/(r.T*r.D),0);
+}
+function person(x,y,c,two){
+  const one=(dx,col)=>`<g transform="translate(${x+dx} ${y})"><circle cx="0" cy="-22" r="6.5" fill="${col}"/><g stroke="${col}" stroke-width="3.5" stroke-linecap="round"><line x1="0" y1="-16" x2="0" y2="4"/><line x1="0" y1="-9" x2="-11" y2="0"/><line x1="0" y1="-9" x2="11" y2="0"/><line x1="0" y1="4" x2="-8" y2="20"/><line x1="0" y1="4" x2="8" y2="20"/></g></g>`;
+  return two?one(-9,'#e8ebee')+one(9,'#f5b942'):one(0,c);
+}
+render();
+})();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));}
+</script>
+</body>
+</html>

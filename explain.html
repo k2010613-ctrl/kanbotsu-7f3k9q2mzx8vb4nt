@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数値の説明</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0f1214"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="陥没計算"><link rel="apple-touch-icon" href="icon-180.png">
+<style>
+html,body{margin:0;background:#0f1214;color:#e8ebee;font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.7}
+header{position:sticky;top:0;background:#0f1214;border-bottom:1px solid #2b3238;padding:max(10px,env(safe-area-inset-top)) 14px 8px;display:flex;align-items:center;gap:10px}
+header a{color:#a3adb5;text-decoration:none;font-size:14px}header h1{margin:0;font-size:16px}
+main{max-width:720px;margin:0 auto;padding:12px 16px 40px}
+h2{font-size:17px;margin:22px 0 8px;color:#f5b942}
+h3{font-size:15px;margin:18px 0 6px;color:#5fd8c9}
+.box{background:#171b1f;border:1px solid #2b3238;border-radius:10px;padding:10px 14px;font-size:13px;color:#a3adb5}
+ul{padding-left:18px;margin:4px 0}li{margin:5px 0}
+b.ex{color:#f5b942}b.say{color:#5fd8c9}
+.f{font-family:ui-monospace,Menlo,monospace;background:#171b1f;border-radius:6px;padding:6px 10px;font-size:13px;margin:6px 0;overflow-x:auto}
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs button{flex:1;padding:9px;border-radius:9px;border:1px solid #2b3238;background:#1e2328;color:#a3adb5;font:inherit;font-weight:700}
+.tabs button.on{color:#e8ebee;border-color:#f5b942;background:#2a2418}
+section{display:none}section.on{display:block}
+.note{font-size:12px;color:#6b7680;margin-top:24px}
+</style></head><body>
+<header><a href="index.html">‹ 選択</a><h1>数値の説明</h1></header>
+<main>
+<div class="tabs"><button class="on" data-s="s1">かんたんに</button><button data-s="s2">式と根拠</button></div>
+
+<section id="s1" class="on">
+<div class="box">例はすべて当隊の標準条件：三つ打ちナイロン12mm・展張力700kgf・三脚200cm・車両フック高30cm・車両側15°・隊員65kg＋要救助者70kg（135kg）・吊り下げ長100cm</div>
+
+<h2>1　ロープのたわみ</h2><ul>
+<li>決めるのは3つ：展張力、支点間の距離、乗る重さ。</li>
+<li>700kgfで張ったロープに重さを乗せると折れ曲がって下がる。重さを支えるのは張力の上向き成分だけなので、張力が大きいほど、支点間が短いほど、たわみは小さい。</li>
+<li>目安：たわみ ＝ 重さ × 支点間 ÷（4 × 張力）</li>
+<li><b class="ex">例：</b>20m・135kg → 135×20÷(4×700) ＝ 約1m。三脚2mから1m下がり、吊り下げ1mを引くと地上高はほぼ0。これが「20mが限界」の理由。</li>
+<li>三つ打ちは伸びるが、700まで張った後に人が乗っても張力はほぼ上がらない（700→約730）。ワイヤーは伸びないので張力が上がり（→約810）、たわみは1割ほど浅い。</li>
+<li><b class="say">指揮への言い方：</b>「支点間20m・展張700で2人乗るとロープは1m下がる。三脚2mでは足が着く。支点を上げるか、間を詰める」</li></ul>
+
+<h2>2　三脚にかかる荷重</h2><ul>
+<li>三脚の頂点には穴側と車両側の2本のロープ。三脚が受けるのは2本の張力を合わせた力（合力）。</li>
+<li>2本が一直線なら三脚に力はかからない。折れ曲がるほど、下に押す力が増える。折れ曲がりを作るのは車両側の角度と、穴側のたわみの角度。</li>
+<li><b class="ex">例：</b>700・15°・20m・135kg → 約250kgf。何も乗っていなくても15°の分だけ約180kgf。</li>
+<li>車両側の角度を大きくすると急に増える。45°で約620kgf。だから「車両側は15°まで」。</li>
+<li><b class="say">指揮への言い方：</b>「三脚には展張力の3〜4割がかかる。定格350なら、車両を離して角度を15°以内に」</li></ul>
+
+<h2>3　支点（車両フック・アンカー）にかかる荷重</h2><ul>
+<li>フックにはロープの張力がそのまま。展張700なら700。人が乗ると三つ打ちで約730、ワイヤーで約810。</li>
+<li>三脚と違い、角度や距離では増減しない。ロープを引く力そのもの。</li>
+<li>車両を近づけるとフックの荷重は変わらず三脚の荷重だけ増える。離しても展張力が同じならフックは減らない。</li>
+<li><b class="say">指揮への言い方：</b>「車両フックには展張力の700がそのまま。三脚と違い、距離では変わらない」</li></ul>
+
+<h2>4　安息角</h2><ul>
+<li>土が自然に崩れて落ち着く斜面の角度。穴の底の縁からこの角度で線を引き、地表に出るまでが「張り出し」。穴の縁からそこまではまだ崩れる恐れがある（ウォームゾーン）。</li>
+<li>張り出し ＝ 深さ ÷ tan（安息角）。45°で深さと同じ、30°で1.7倍、20°で2.75倍。</li>
+<li><b class="ex">例：</b>深さ3.7m。45°→3.7m、30°→6.4m、20°→10.2m。同じ穴でもウォームゾーンの直径は12mにも25mにもなる。</li>
+<li>45°は高度化検討会の目安。水を含んだ土（下水管の破損現場はたいていこれ）は20°。迷ったら広い方。</li>
+<li><b class="say">指揮への言い方：</b>「深さ4m、濡れた土なので縁から11m下がる。三脚も車両もその外」</li></ul>
+
+<h2>5　荷重が2つに分かれた時</h2><ul>
+<li>要救助者を支点側へ引き始めると、隊員（中央）と要救助者（支点寄り）の2点で乗る。</li>
+<li>2人が同じ場所にいる時が一番深い。離れるほどそれぞれの沈みは浅くなり、中央の隊員は楽になる。</li>
+<li>ただし要救助者が三脚に近づくほど、その三脚の荷重は増える。</li>
+<li><b class="ex">例：</b>20m・700。①隊員1人中央 → 46cm。②中央に2人 → 95cm。③要救助者を三脚Aから5mまで引いた時 → 隊員71cm・要救助者60cm、三脚Aは252→268kgf。</li>
+<li><b class="say">指揮への言い方：</b>「2人が真ん中に揃う瞬間が一番下がる。過ぎれば楽になるが、引く側の三脚に荷重が寄る」</li></ul>
+</section>
+
+<section id="s2">
+<h3>たわみ</h3>
+<p>支点間D、張力T、重さWが中央に乗る時：</p>
+<div class="f">sinθ ＝ W ÷ (2T)　　d ＝ (D/2) × tanθ</div>
+<p>θが小さい時は d ≒ W×D ÷ (4T)。ツールは近似でなく上の式を数値で解く。</p>
+<p>伸びを入れる時：展張力T₀で張ってウインチを止めると、人が乗った分ロープが伸びて張力Tが上がる。伸び剛性K（＝基準荷重÷伸び率）で</p>
+<div class="f">ロープ全長 ＝ 無負荷長 × (1 + T/K)　と幾何条件を同時に満たすTを求める</div>
+<p>三つ打ちナイロン12mm：当隊実測（2026年9月）50kgfで10mにマーク→700kgfで11.90m。伸び率19%、K≒3,700。ワイヤーは0.3%として扱う。</p>
+<p>実測との照合：三脚間17.5m・支点200cm・700kgf・150kgで、計算91cm・実測85cm（−7%）。</p>
+
+<h3>三脚の合力</h3>
+<div class="f">R ＝ 2T × sin( (θ₁ + θveh) ÷ 2 )</div>
+<p>θ₁ ＝ atan(たわみ ÷ (D/2))、θveh ＝ atan((三脚高 − フック高) ÷ 水平距離)。照合：計算273・実測282kgf（＋3%）。無負荷は計算193・実測208。</p>
+<p>転倒の目安：合力の傾き ＝ atan(|cosθ₁ − cosθveh| ÷ (sinθ₁ + sinθveh))。脚の開き角αの三脚は、脚の方向へ傾く時α、脚と脚の間へ傾く時 atan(tanα÷2) が限界（α25°で13.1°）。</p>
+
+<h3>支点（フック・アンカー）</h3>
+<div class="f">フックの荷重 ＝ ロープの張力 T</div>
+<p>展張700の根拠：三つ打ちナイロン12mmの最低破断強度はJIS・NK規格で27.5kN≒2,800kgf。700×4＝2,800、安全率4。東京消防庁消防科学研究所報20号（昭和58年）の使用済み救助ロープ試験では平均2,982kg、最低クラス2,200〜2,300kg。700に対して安全率3.1〜4.3。</p>
+
+<h3>安息角</h3>
+<div class="f">張り出し c ＝ 深さ ÷ tanθ　　ウォームゾーン直径 ＝ 穴の直径 ＋ 2c</div>
+<p>係数：45°→1.00、30°→1.73、20°→2.75。45°は「地下閉鎖空間における救助活動マニュアル」（令和8年3月 消防庁）の目安、30°・20°は当隊の運用値。土砂流出源が不明なら更なる陥没を考慮する（マニュアル注記）。</p>
+
+<h3>2点荷重</h3>
+<div class="f">y(x) ＝ Σ Wᵢ × min(x, xᵢ) × (D − max(x, xᵢ)) ÷ (T × D)</div>
+<p>張力一様の弦として扱う。三脚A側の角度は Σ Wᵢ(D − xᵢ) ÷ (T·D)、B側は Σ Wᵢxᵢ ÷ (T·D) の傾きから。1点に戻すと厳密解とほぼ一致（135kg・20mで95cm対93cm）。</p>
+
+<h3>時間経過の緩み</h3>
+<p>当隊実測：700で張って無負荷のまま30分で650kgfに低下。全長に対する追加の伸びで約1.0%。乗ったままの沈みと張力、降ろした時の張力計の読みを出す。展張力まで再展張すれば元に戻る。</p>
+</section>
+<div class="note">示すのはいずれも目安の数値であり、活動を決定づけるものではない。判断は現場指揮者が行う。</div>
+</main>
+<script>document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.s));window.scrollTo(0,0);}));
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));}</script>
+</body></html>

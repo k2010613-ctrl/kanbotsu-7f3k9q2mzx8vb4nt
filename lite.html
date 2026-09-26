@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>道路陥没 簡易計算</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1214">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="陥没計算">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#0f1214;--panel:#171b1f;--panel2:#1e2328;--line:#2b3238;--text:#e8ebee;--dim:#a3adb5;--faint:#6b7680;
+  --ok:#5fd8c9;--ng:#f0555a;--warm:#e0803a;--rope:#c9b896;--font:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+header{padding-top:max(10px,env(safe-area-inset-top));display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:17px;font-weight:700}
+header span{font-size:12px;color:var(--faint)}
+main{display:grid;grid-template-columns:1fr;gap:12px;padding:12px;max-width:1400px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.grp{font-size:11.5px;font-weight:700;color:var(--faint);letter-spacing:.06em;margin:10px 0 4px}
+.grp:first-child{margin-top:0}
+.ctl{padding:5px 0}
+.ctl .hd{display:flex;justify-content:space-between;align-items:baseline}
+.ctl .nm{font-size:14px;font-weight:600}
+.ctl .nm small{font-weight:400;color:var(--faint);font-size:11.5px;margin-left:4px}
+.ctl .vl{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ok)}
+.ctl .vl.warn{color:var(--ng)}
+.ctl input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--ok);height:26px}
+.ctl.off{opacity:.45}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);padding:4px 0}
+.chk input{width:18px;height:18px;accent-color:var(--ok)}
+.seg{display:flex;gap:6px;margin-top:4px}
+.seg button{flex:1;padding:7px 4px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.seg button.on{color:var(--ok);border-color:var(--ok);background:#12262a}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:auto;max-height:440px;display:block}
+.fig{overflow:hidden}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.card .sl{font-size:12px;color:var(--dim)}
+.card .sv{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:2px}
+.card .sv small{font-size:13px;font-weight:400;color:var(--dim);margin-left:3px}
+.card.hi{border-color:var(--ok)}
+.card.ng .sv{color:var(--ng)}
+.card.warm .sv{color:var(--warm)}
+.verdict{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:10px 14px}
+.verdict .mk{font-size:34px;font-weight:700;min-width:44px;text-align:center}
+.verdict .tx{font-size:13.5px;color:var(--dim)}
+.verdict .tx b{display:block;color:var(--text);font-size:15px}
+.verdict.ok .mk{color:var(--ok)} .verdict.caution .mk{color:#f0c14b} .verdict.ng .mk{color:var(--ng)}
+footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400px;margin:0 auto}
+@media (min-width:960px){
+  main{grid-template-columns:320px 1fr;grid-template-rows:1fr auto;height:calc(100vh - 46px);padding:10px 16px}
+  .in{grid-row:1/3;overflow:auto;padding:8px 12px}
+  .ctl{padding:2px 0}
+  .ctl input[type=range]{height:20px;margin:0}
+  .grp{margin:6px 0 2px}
+  .ctl .nm{font-size:13px}
+  .ctl .vl{font-size:15px}
+  .seg button{padding:5px 4px;font-size:12px}
+  .chk{padding:2px 0;font-size:12.5px}
+  .card{padding:8px 12px}
+  .card .sv{font-size:26px}
+  .fig{min-height:0}
+  .fig svg{height:100%;max-height:100%;width:100%}
+  .res{align-content:start}
+}
+</style>
+</head>
+<body>
+<header><h1><a href="index.html" style="color:var(--dim);text-decoration:none;font-size:14px;margin-right:8px">‹ 選択</a>道路陥没 簡易計算</h1><span>穴の寸法 → ウォームゾーン → 三脚・車両の位置 → たわみと三脚荷重</span></header>
+<main>
+<div class="panel in">
+  <div class="grp">穴</div>
+  <div class="ctl"><div class="hd"><span class="nm">深さ</span><span class="vl" id="vDepth">3.7 m</span></div><input type="range" id="depth" min="1" max="15" step="0.1" value="3.7"></div>
+  <div class="ctl"><div class="hd"><span class="nm">直径</span><span class="vl" id="vDia">5.0 m</span></div><input type="range" id="dia" min="1" max="15" step="0.5" value="5"></div>
+  <div class="ctl"><div class="hd"><span class="nm">安息角</span><span class="vl" id="vAng">20°</span></div>
+    <div class="seg" id="angSeg"><button data-v="20" class="on">20° 含水</button><button data-v="30">30° 乾燥</button><button data-v="45">45° 目安</button></div>
+    <input type="range" id="ang" min="15" max="50" step="1" value="20"></div>
+
+  <div class="grp">三脚と車両</div>
+  <label class="chk"><input type="checkbox" id="autoTri" checked> 三脚をウォームゾーンの縁に置く（自動）</label>
+  <div class="ctl" id="triCtl"><div class="hd"><span class="nm">三脚〜穴の縁<small>張り出しより外</small></span><span class="vl" id="vTri">— m</span></div><input type="range" id="tri" min="0" max="45" step="0.1" value="10"></div>
+  <div class="ctl"><div class="hd"><span class="nm">支点Aの高さ<small>三脚・電柱・車上三脚など</small></span><span class="vl" id="vTh">200 cm</span></div><input type="range" id="th" min="150" max="900" step="10" value="200"></div>
+  <div class="ctl"><div class="hd"><span class="nm">支点Bの高さ</span><span class="vl" id="vTh2">200 cm</span></div><input type="range" id="th2" min="150" max="900" step="10" value="200"></div>
+  <div class="ctl"><div class="hd"><span class="nm">車両側の角度<small>上限15°</small></span><span class="vl" id="vVa">15°</span></div><input type="range" id="va" min="5" max="45" step="1" value="15"></div>
+  <div class="ctl"><div class="hd"><span class="nm">車両フックの高さ</span><span class="vl" id="vVh">30 cm</span></div><input type="range" id="vh" min="0" max="120" step="5" value="30"></div>
+
+  <div class="grp">荷重とロープ</div>
+  <div class="ctl"><div class="hd"><span class="nm">吊る重さ<small>隊員＋要救助者</small></span><span class="vl" id="vW">150 kg</span></div><input type="range" id="w" min="50" max="250" step="5" value="150"></div>
+  <div class="ctl"><div class="hd"><span class="nm">ロープ</span><span class="vl" id="vRope">伸び19%</span></div>
+    <div class="seg" id="ropeSeg"><button data-k="19" data-n="三つ打ちナイロン" class="on">三つ打ち</button><button data-k="0.3" data-n="ワイヤー">ワイヤー</button></div></div>
+  <div class="ctl"><div class="hd"><span class="nm">展張力</span><span class="vl" id="vT">700 kgf</span></div><input type="range" id="t" min="200" max="700" step="10" value="700"></div>
+  <div class="ctl"><div class="hd"><span class="nm">吊り下げ長<small>ロープ〜お尻</small></span><span class="vl" id="vSus">100 cm</span></div><input type="range" id="sus" min="50" max="150" step="5" value="100"></div>
+</div>
+
+<div class="fig"><svg id="svg" viewBox="0 0 1000 400" aria-label="配置図"></svg></div>
+
+<div class="res">
+  <div class="card warm"><div class="sl">張り出し（縁から）</div><div class="sv" id="rC">—<small>m</small></div></div>
+  <div class="card warm"><div class="sl">ウォームゾーン直径</div><div class="sv" id="rWarm">—<small>m</small></div></div>
+  <div class="card hi"><div class="sl">支点間</div><div class="sv" id="rSpan">—<small>m</small></div></div>
+  <div class="card"><div class="sl">支点〜車両（平均）</div><div class="sv" id="rVeh">—<small>m</small></div></div>
+  <div class="card hi"><div class="sl">たわみ（中央）</div><div class="sv" id="rSag">—<small>cm</small></div></div>
+  <div class="card" id="cClear"><div class="sl">お尻の地上高</div><div class="sv" id="rClear">—<small>cm</small></div></div>
+  <div class="card hi" id="cLoad"><div class="sl">支点の荷重 A / B（定格 350）</div><div class="sv" id="rLoad">—<small>kgf</small></div></div>
+  <div class="card"><div class="sl">荷重時のロープ張力</div><div class="sv" id="rT">—<small>kgf</small></div></div>
+  <div class="card verdict" id="verdict"></div>
+</div>
+</main>
+<footer>ロープの伸び率：三つ打ちナイロン12mmは当隊実測（700kgfで19%）、ワイヤーはほぼ伸びないとして、展張後ウインチ固定で計算。示すのは目安の数値で、活動を決めるものではない。判断は現場指揮者が行う。</footer>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+let K=700/0.19; const LIMIT_VEH=15, LIMIT_T=700;
+const ids=['depth','dia','ang','tri','th','th2','va','vh','w','t','sus'];
+ids.forEach(i=>$(i).addEventListener('input',update));
+$('autoTri').addEventListener('change',update);
+document.querySelectorAll('#angSeg button').forEach(b=>b.addEventListener('click',()=>{$('ang').value=b.dataset.v;update();}));
+document.querySelectorAll('#ropeSeg button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#ropeSeg button').forEach(x=>x.classList.toggle('on',x===b));K=700/(+b.dataset.k/100);$('vRope').textContent=b.dataset.n+' 伸び'+b.dataset.k+'%';update();}));
+const v=id=>parseFloat($(id).value);
+
+function sagLock(D,W,T0,tails){ // centre load, locked winch, rope stiffness K, tails = 控え合計長
+  if(W<=0) return {h:0,T:T0};
+  const x=D/2, Lt=D+tails, Lu=Lt/(1+T0/K);
+  const g=h=>{const l=Math.hypot(x,h);const T=W/(2*h/l);return [tails+2*l-Lu*(1+T/K),T];};
+  let lo=1e-5,hi=D;for(let i=0;i<90;i++){const m=(lo+hi)/2;g(m)[0]>0?hi=m:lo=m;}
+  const h=(lo+hi)/2;return {h,T:g(h)[1]};
+}
+
+function update(){
+  const depth=v('depth'),dia=v('dia'),ang=v('ang'),thcm=v('th'),th2cm=v('th2'),va=v('va'),vhcm=v('vh'),W=v('w'),T0=v('t'),sus=v('sus');
+  document.querySelectorAll('#angSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===ang));
+  const c=Math.round(depth/Math.tan(ang*Math.PI/180)*10)/10;
+  $('tri').max=Math.max(45,c);
+  const auto=$('autoTri').checked;
+  if(auto){$('tri').value=c;} $('triCtl').classList.toggle('off',auto); $('tri').disabled=auto;
+  const tri=Math.max(v('tri'),0);
+  const span=Math.min(dia+2*tri,50), warm=dia+2*c;
+  const tanv=Math.tan(va*Math.PI/180);
+  const vehDist=((thcm-vhcm)/100)/tanv, vehDist2=((th2cm-vhcm)/100)/tanv;
+  const chordMid=(thcm+th2cm)/2;
+  const r=sagLock(span,W,T0,vehDist+vehDist2), h=r.h, T=r.T;
+  const vaRad=va*Math.PI/180, yP=chordMid/100-h;
+  const thA=Math.atan2(thcm/100-yP,span/2), thB=Math.atan2(th2cm/100-yP,span/2);
+  const loadA=2*T*Math.sin((thA+vaRad)/2), loadB=2*T*Math.sin((thB+vaRad)/2), load=Math.max(loadA,loadB);
+  const clear=chordMid-h*100-sus;
+  const vehOver=va>LIMIT_VEH+0.001, triIn=!auto && tri<c-0.05;
+  // labels
+  $('vDepth').textContent=depth.toFixed(1)+' m'; $('vDia').textContent=dia.toFixed(1)+' m'; $('vAng').textContent=ang+'°';
+  $('vTri').textContent=tri.toFixed(1)+' m'; $('vTri').className='vl'+(triIn?' warn':'');
+  $('vTh').textContent=thcm+' cm'; $('vTh2').textContent=th2cm+' cm'; $('vVa').textContent=va+'°'; $('vVa').className='vl'+(vehOver?' warn':''); $('vVh').textContent=vhcm+' cm';
+  $('vW').textContent=W+' kg'; $('vT').textContent=T0+' kgf'; $('vSus').textContent=sus+' cm';
+  const set=(id,val,n)=>{const e=$(id);const u=e.querySelector('small');e.textContent=val.toFixed(n);e.appendChild(u);};
+  set('rC',c,1); set('rWarm',warm,1); set('rSpan',span,1); set('rVeh',(vehDist+vehDist2)/2,1); set('rSag',h*100,0); set('rClear',clear,0); $('rLoad').innerHTML=Math.round(loadA)+'<small>kgf</small> / '+Math.round(loadB)+'<small>kgf</small>'; set('rT',T,0);
+  $('cClear').className='card'+(clear<=0?' ng':'');
+  // verdict
+  let j,mk,txt;
+  if(clear<=0){j='ng';mk='×';txt='救助者が接地する。支点を近づける（縁の外で）か、支点を高くする';}
+  else if(clear<30){j='caution';mk='△';txt='地上高30cm未満。余裕なし';}
+  else{j='ok';mk='〇';txt='中央でも地上高を確保';}
+  if(span>25) txt+='　※スパン25m超は当隊検証（〜25m）の範囲外。高い支点の設営と荷重は別途確認';
+  let extra=[];
+  const overLoad=Math.max(loadA,loadB)>350; $('cLoad').className='card hi'+(overLoad?' ng':'');
+  if(overLoad) extra.push('支点荷重が定格350kgf超');
+  if(triIn) extra.push('三脚がウォームゾーン内');
+  if(vehOver) extra.push('車両側角度が15°超');
+  $('verdict').className='card verdict '+j;
+  $('verdict').innerHTML=`<div class="mk">${mk}</div><div class="tx"><b>支点間 ${span.toFixed(1)} m・支点 ${thcm}/${th2cm} cm・${W} kg</b>${txt}${extra.length?'　⚠ '+extra.join('・'):''}</div>`;
+  draw({depth,dia,c,tri,span,vehDist,vehDist2,thcm,th2cm,vhcm,h,sus,loadA,loadB,clear,vehOver,triIn,T,T0});
+}
+
+function draw(p){
+  const L=70, GY=195, VB=1000;
+  const totalM=p.vehDist+p.vehDist2+p.span;
+  const pxM=Math.min(52,(VB-2*L)/totalM);
+  const pxV=Math.min(58,165/(Math.max(p.thcm,p.th2cm)/100));
+  const X=m=>L+m*pxM, Y=hm=>GY-hm*pxV;
+  const FZ=1;
+  const mTA=p.vehDist, mTB=p.vehDist+p.span, mVB=totalM;
+  const xVA=X(0), xTA=X(mTA), xTB=X(mTB), xVB=X(mVB);
+  const yVeh=Y(p.vhcm/100), yTri=Y(p.thcm/100), yTri2=Y(p.th2cm/100), yMid=(yTri+yTri2)/2;
+  const sagPx=Math.min(p.h*pxV,170);
+  const cx=X(mTA+p.span/2), py=yMid+sagPx;
+  const hc=mTA+p.span/2, hR=p.dia/2;
+  const hL=X(hc-hR), hRx=X(hc+hR), wL=X(hc-hR-p.c), wR=X(hc+hR+p.c);
+  const rowWarm=GY+100,rowSpan=GY+135,rowVeh=GY+170;
+  let s=`<defs><linearGradient id="hf" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a1512"/><stop offset="100%" stop-color="#0c0a08"/></linearGradient><pattern id="hz" width="16" height="16" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#4a2f12"/><rect width="8" height="16" fill="#e0803a"/></pattern></defs>`;
+  s+=`<line x1="${L-30}" y1="${GY}" x2="${VB-30}" y2="${GY}" stroke="#3a4147" stroke-width="2"/>`;
+  s+=`<rect x="${wL}" y="${GY-5}" width="${hL-wL}" height="9" fill="url(#hz)"/><rect x="${hRx}" y="${GY-5}" width="${wR-hRx}" height="9" fill="url(#hz)"/>`;
+  s+=dim(wL,hL,rowWarm,'張り出し '+p.c.toFixed(1)+'m','#e0803a')+dim(hRx,wR,rowWarm,'張り出し '+p.c.toFixed(1)+'m','#e0803a');
+  const hw=hRx-hL, bev=Math.min(16,hw*.3), jag=Math.min(9,hw*.2), mid=(hL+hRx)/2;
+  const depthPx=Math.min(28+p.depth*6,60);
+  s+=`<path d="M ${hL} ${GY} L ${mid-jag} ${GY} L ${mid} ${GY-5} L ${mid+jag} ${GY} L ${hRx} ${GY} L ${hRx-bev} ${GY+depthPx} L ${hL+bev} ${GY+depthPx} Z" fill="url(#hf)" stroke="#4a3f38" stroke-width="1.5" stroke-linejoin="round"/>`;
+  s+=`<text x="${mid}" y="${GY+depthPx+16}" text-anchor="middle" font-size="12" font-weight="700" fill="#9aa3ab">穴 ${p.dia.toFixed(1)}m・深さ ${p.depth.toFixed(1)}m</text>`;
+  const vc=p.vehOver?'#f0555a':'#5fd8c9';
+  for(const [xv,sgn] of [[xVA,1],[xVB,-1]]){
+    s+=`<g><rect x="${xv-35}" y="${yVeh-38}" width="70" height="34" rx="5" fill="#252b30" stroke="#3a4147" stroke-width="1.5"/><circle cx="${xv-20*sgn}" cy="${yVeh-4}" r="5" fill="#14171a" stroke="#3a4147" stroke-width="1.3"/><circle cx="${xv+18*sgn}" cy="${yVeh-4}" r="5" fill="#14171a" stroke="#3a4147" stroke-width="1.3"/></g><circle cx="${xv+22*sgn}" cy="${yVeh}" r="4.5" fill="${vc}"/>`;
+  }
+  const lc=p.vehOver?'#f0555a':'#c9b896';
+  s+=`<line x1="${xVA+22}" y1="${yVeh}" x2="${xTA}" y2="${yTri}" stroke="${lc}" stroke-width="3" stroke-linecap="round"/><line x1="${xTB}" y1="${yTri2}" x2="${xVB-22}" y2="${yVeh}" stroke="${lc}" stroke-width="3" stroke-linecap="round"/>`;
+  s+=dim(xVA,xTA,rowVeh,'三脚⇄車両 '+p.vehDist.toFixed(1)+'m',lc)+dim(xTB,xVB,rowVeh,'三脚⇄車両 '+p.vehDist2.toFixed(1)+'m',lc);
+  const tc=p.triIn?'#f0555a':'#5fd8c9';
+  for(const [tx,ty,hc,ld] of [[xTA,yTri,p.thcm,p.loadA],[xTB,yTri2,p.th2cm,p.loadB]]){
+    const lw=Math.min(30,(GY-ty)*0.42), by=GY-(GY-ty)*0.36;
+    s+=`<g stroke="#9aa3ab" stroke-width="4" stroke-linecap="round"><line x1="${tx-lw}" y1="${GY}" x2="${tx}" y2="${ty}"/><line x1="${tx+lw}" y1="${GY}" x2="${tx}" y2="${ty}"/><line x1="${tx-lw*0.45}" y1="${by+3}" x2="${tx+lw*0.5}" y2="${by-3}"/></g><circle cx="${tx}" cy="${ty}" r="6" fill="${tc}"/>`;
+    s+=`<text x="${tx}" y="${ty-14}" text-anchor="middle" font-size="12" font-weight="700" fill="${tc}">${Math.round(ld)}kgf</text>`;
+    s+=`<text x="${tx}" y="${GY+16}" text-anchor="middle" font-size="10" fill="#9aa3ab">${hc}cm</text>`;
+  }
+  s+=dim(xTA,xTB,rowSpan,'支点間 '+p.span.toFixed(1)+'m','#5fd8c9');
+  s+=`<path d="M ${xTA} ${yTri} L ${cx} ${py} L ${xTB} ${yTri2}" fill="none" stroke="#c9b896" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const by=py+p.sus/100*pxV, bad=p.clear<=0, cc=bad?'#f0555a':'#5fd8c9';
+  s+=`<circle cx="${cx}" cy="${py}" r="3" fill="#9aa3ab"/><line x1="${cx}" y1="${py}" x2="${cx}" y2="${by}" stroke="#9aa3ab" stroke-width="1.6" stroke-dasharray="1 2.5"/>`;
+  s+=`<line x1="${cx}" y1="${by}" x2="${cx}" y2="${GY}" stroke="${cc}" stroke-width="1.3" stroke-dasharray="2 3" opacity=".75"/>`;
+  s+=`<text x="${bad?hRx+8:cx+14}" y="${bad?GY+26:(by+GY)/2+4}" font-size="11" font-weight="700" fill="${cc}">地上高 ${Math.round(p.clear)}cm</text>`;
+  s+=`<text x="${cx+10}" y="${py-6}" font-size="11" font-weight="700" fill="#c9b896">たわみ ${Math.round(p.h*100)}cm・${Math.round(p.T)}kgf</text>`;
+  const pc='#e8ebee';
+  s+=`<g transform="translate(${cx} ${by})"><circle cx="0" cy="-22" r="6.5" fill="${pc}"/><line x1="0" y1="-16" x2="0" y2="4" stroke="${pc}" stroke-width="3.5" stroke-linecap="round"/><line x1="0" y1="-9" x2="-11" y2="0" stroke="${pc}" stroke-width="3.5" stroke-linecap="round"/><line x1="0" y1="-9" x2="11" y2="0" stroke="${pc}" stroke-width="3.5" stroke-linecap="round"/><line x1="0" y1="4" x2="-8" y2="20" stroke="${pc}" stroke-width="3.5" stroke-linecap="round"/><line x1="0" y1="4" x2="8" y2="20" stroke="${pc}" stroke-width="3.5" stroke-linecap="round"/></g>`;
+  $('svg').innerHTML=s;
+}
+function dim(x1,x2,y,label,color){
+  return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.3" opacity=".85"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="${color}" stroke-width="1.3" opacity=".85"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="${color}" stroke-width="1.3" opacity=".85"/><text x="${(x1+x2)/2}" y="${y+14}" text-anchor="middle" font-size="11" font-weight="700" fill="${color}">${label}</text>`;
+}
+update();
+})();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));}
+</script>
+</body>
+</html>
