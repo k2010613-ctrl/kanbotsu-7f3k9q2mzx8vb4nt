@@ -200,7 +200,7 @@ function showPanel(k){
   const p=PANELS[k];
   w.innerHTML=`<div class="panel ${p.lim?'lim':''} ${p.as?'as':''}"><h3>${p.t}</h3>${p.b()}</div>`;
   w.querySelectorAll('input[type=range]').forEach(r=>r.addEventListener('input',()=>{S[r.dataset.k]=parseFloat(r.value);if(r.dataset.k==='tri')S.auto=false;render();}));
-  const a=$('autoTri'); if(a) a.addEventListener('change',()=>{S.auto=a.checked;render();});
+  const a=$('autoTri'); if(a) a.addEventListener('change',()=>{S.auto=a.checked;if(S.auto){S.tri=calc(S,phase).c;}render();});
   w.querySelectorAll('#angSeg button').forEach(b=>b.addEventListener('click',()=>{S.ang=+b.dataset.v;render();}));
   w.querySelectorAll('#ropeSeg button').forEach(b=>b.addEventListener('click',()=>{S.rope=b.dataset.v;render();}));
   render();
@@ -213,6 +213,7 @@ document.querySelectorAll('#phases button').forEach(b=>b.addEventListener('click
 /* ---------- render ---------- */
 function render(){
   const r=calc(S,phase);
+  if(S.auto) S.tri=r.c;
   // sync panel values
   document.querySelectorAll('#panelWrap .ctl').forEach(c=>{const k=c.dataset.k;const u=c.querySelector('.vl');const unit=u.textContent.split(' ').pop();u.textContent=fmt(k,unit);const inp=c.querySelector('input');if(inp)inp.value=S[k];c.classList.toggle('off',k==='tri'&&S.auto);});
   document.querySelectorAll('#angSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.ang));
