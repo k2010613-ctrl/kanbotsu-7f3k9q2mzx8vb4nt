@@ -98,16 +98,16 @@ main{max-width:1100px;margin:0 auto;padding:10px 12px 30px}
 <div class="right">
   <div id="panelWrap"></div>
   <div class="res" id="res"></div>
-  <div class="note" id="foot">区域・活動レベル・可否の区分は「地下閉鎖空間における救助活動マニュアル」（令和8年3月 消防庁）による。安息角30°・20°、展張力700kgf、三脚定格、ロープの伸び率（三つ打ちナイロン12mm：当隊実測 700kgfで19%、追加伸びは無負荷30分で700→650kgfの実測から）は当隊の条件。他本部は自隊の値に置き換える。計算値は当隊実測（三脚間17.5m・150kg）と±10%以内で一致。展張後ウインチ固定として計算し、2点荷重は張力一様の弦として扱う。示すのは目安の数値で、活動を決めるものではない。判断は現場指揮者が行う。</div>
+  <div class="note" id="foot">区域・活動レベル・可否の区分は「地下閉鎖空間における救助活動マニュアル」（令和8年3月 消防庁）による。安息角30°・20°、展張力700kgf、三脚定格、ロープの伸び率（三つ打ちナイロン12mm：当隊実測 700kgfで19%、追加伸びは無負荷30分で700→650kgfの実測から）は当隊の条件。スタティックはJDR資料（NFPA/CI基準：MBSの10%荷重で伸び1〜6%）の硬い側1%、MBSは資料の代表値（11mm 31kN・12.5mm 44kN）。衝撃は減衰なしの単純計算で、実際は結び目や人体で多少吸収される。他本部は自隊の値に置き換える。計算値は当隊実測（三脚間17.5m・150kg）と±10%以内で一致。展張後ウインチ固定として計算し、2点荷重は張力一様の弦として扱う。示すのは目安の数値で、活動を決めるものではない。判断は現場指揮者が行う。</div>
 </div>
 </main>
 
 <script>
 (function(){
 const $=id=>document.getElementById(id);
-const S={depth:3.7,dia:5,ang:20,auto:true,tri:10,hA:200,hB:200,va:15,vh:30,T0:700,rope:'nylon',W1:65,W2:70,sus:100,x2:5,limLoad:350,limClear:0,limSF:4,creep:1.0};
+const S={depth:3.7,dia:5,ang:20,auto:true,tri:10,hA:200,hB:200,va:15,vh:30,T0:700,rope:'nylon',W1:65,W2:70,sus:100,x2:5,limLoad:350,limClear:0,limSF:4,creep:1.0,drop:10};
 let phase=1, sel=null;
-const ROPE={nylon:{K:700/0.19,bs:2800,n:'三つ打ちナイロン12mm'},wire:{K:700/0.003,bs:4000,n:'ワイヤー'}};
+const ROPE={nylon:{K:700/0.19,bs:2800,n:'三つ打ちナイロン12mm'},double:{K:2*700/0.19,bs:5600,n:'三つ打ち2本張り'},st11:{K:0.1*3161/0.01,bs:3161,n:'スタティック11mm'},st12:{K:0.1*4487/0.01,bs:4487,n:'スタティック12.5mm'},wire:{K:700/0.003,bs:4000,n:'ワイヤー'}};
 const D2R=Math.PI/180;
 
 /* ---------- physics ---------- */
@@ -118,6 +118,14 @@ function multiSag(D,loads,T0,tails,K,creep){
   if(K<1e6){const Lt=D+tails,Lu=Lt/(1+T0/K)+Lt*(creep||0);let lo=T0*.5,hi=T0*8;for(let i=0;i<70;i++){const m=(lo+hi)/2;(tails+len(m)>Lu*(1+m/K))?lo=m:hi=m;}T=(lo+hi)/2;}
   const sA=loads.reduce((a,l)=>a+l.W*(D-l.x),0)/(T*D), sB=loads.reduce((a,l)=>a+l.W*l.x,0)/(T*D);
   return {T,y:x=>y(T,x),thA:Math.atan(sA),thB:Math.atan(sB)};
+}
+function shock(D,W,T0,tails,K,drop,h0){
+  const x=D/2, Lu=(D+tails)/(1+T0/K);
+  const Ten=h=>Math.max(0,K*((tails+2*Math.hypot(x,h))/Lu-1));
+  const U=h=>{const T=Ten(h);return T*T/(2*K)*Lu;};
+  const U0=U(h0); if(drop<=0) return {h:h0,T:Ten(h0)};
+  let lo=h0,hi=h0+15; for(let i=0;i<80;i++){const m=(lo+hi)/2;(U(m)-U0>W*(drop+m-h0))?hi=m:lo=m;}
+  const h=(lo+hi)/2; return {h,T:Ten(h)};
 }
 function calc(s,ph){
   const c=Math.round(s.depth/Math.tan(s.ang*D2R)*10)/10;
@@ -138,7 +146,10 @@ function calc(s,ph){
   const loadA=2*m.T*Math.sin((thA+vr)/2), loadB=2*m.T*Math.sin((thB+vr)/2);
   const clear=chord-sagP*100-s.sus, clearV=sagV==null?null:chord-sagV*100-s.sus;
   const sf=ROPE[s.rope].bs/m.T;
-  return {c,tri,D,warm,vA,vB,chord,mid,x2,T:m.T,sagP,sagV,loadA,loadB,clear,clearV,sf,loads,Tc:mc.T,sagC,clearC,Tun};
+  const Wt=loads.reduce((a,l)=>a+l.W,0), sk=shock(D,Wt,s.T0,vA+vB,Kr,s.drop/100,sagP);
+  const yS=chord/100-sk.h, thAs=Math.atan2(s.hA/100-yS,mid), thBs=Math.atan2(s.hB/100-yS,mid);
+  const shk={T:sk.T,h:sk.h,clear:chord-sk.h*100-s.sus,loadA:2*sk.T*Math.sin((thAs+vr)/2),loadB:2*sk.T*Math.sin((thBs+vr)/2)};
+  return {c,tri,D,warm,vA,vB,chord,mid,x2,T:m.T,sagP,sagV,loadA,loadB,clear,clearV,sf,loads,Tc:mc.T,sagC,clearC,Tun,shk};
 }
 // inverse: find max value of param p (monotonic increasing effect on metric) keeping metric within limit
 function maxParam(p,lo,hi,metric,limit,ph){
@@ -187,7 +198,7 @@ const PANELS={
   supA:{t:'支点Aの高さ',b:()=>sl('hA','三脚・電柱・車上三脚など',150,900,10,'cm')},
   supB:{t:'支点Bの高さ',b:()=>sl('hB','三脚・電柱・車上三脚など',150,900,10,'cm')},
   veh:{t:'車両',b:()=>`${sl('va','ロープの角度',5,45,1,'°','上限15°')}${sl('vh','フックの高さ',0,120,5,'cm')}`},
-  rope:{t:'ロープ・張力',b:()=>`<div class="seg" id="ropeSeg"><button data-v="nylon">三つ打ち</button><button data-v="wire">ワイヤー</button></div>${sl('T0','展張力',200,900,10,'kgf','当隊目安700＝破断2,800kgfに対し安全率4')}${sl('creep','時間経過で緩む分',0,5,.1,'%','実測：700で張って30分放置→650kgf ＝ 約1.0%')}`},
+  rope:{t:'ロープ・張力',b:()=>`<div class="seg" id="ropeSeg" style="flex-wrap:wrap"><button data-v="nylon">三つ打ち1本</button><button data-v="double">三つ打ち2本</button><button data-v="st11">スタティック11</button><button data-v="st12">スタティック12.5</button><button data-v="wire">ワイヤー</button></div>${sl('T0','展張力',200,1400,10,'kgf','当隊目安700＝破断2,800に対し安全率4。2本張りは合計の張力。2本は均等に張れず6:4程度に偏るので、片方は合計の6割で見る')}${sl('creep','時間経過で緩む分',0,5,.1,'%','実測：700で張って30分放置→650kgf ＝ 約1.0%')}${sl('drop','衝撃（一瞬落ちる高さ）',0,50,5,'cm','乗り移り・キャリッジの滑り・飛びつき等')}`},
   person:{t:'人',b:()=>`${sl('W1','隊員の体重',40,150,5,'kg')}${sl('W2','要救助者の体重',10,150,5,'kg')}${sl('sus','吊り下げ長',50,150,5,'cm','ロープ〜お尻')}${phase===3?sl('x2','要救助者の位置',0.5,49.5,.5,'m','支点Aから'):''}`},
   assess:{t:'状況評価（マニュアルの区分）',b:assessHTML,as:true},
   lim:{t:'上限（ここに収めたい）',b:()=>`${sl('limLoad','三脚の定格荷重',100,1000,10,'kgf')}${sl('limClear','最低地上高',0,150,5,'cm','0＝地面に着かなければよい')}${sl('limSF','ロープ安全率',2,8,.5,'倍')}`,lim:true},
@@ -237,8 +248,9 @@ function render(){
     <div class="card"><div class="sl">たわみ（隊員${phase===3?'／要救助者':''}）</div><div class="sv">${Math.round(r.sagP*100)}<small>cm</small>${phase===3?' '+Math.round(r.sagV*100)+'<small>cm</small>':''}</div></div>
     <div class="card ${okClr?'ok':'ng'}"><div class="sl">お尻の地上高（${S.limClear>0?'下限 '+S.limClear+'cm':'接地しなければ可'}）</div><div class="sv">${Math.round(r.clear)}<small>cm</small>${phase===3?' '+Math.round(r.clearV)+'<small>cm</small>':''}</div>${fixClr?`<div class="fix">→ ${fixClr}</div>`:''}</div>
     <div class="card ${okLoad?'ok':'ng'}"><div class="sl">支点の荷重 A / B（定格 ${S.limLoad}kgf）</div><div class="sv">${Math.round(r.loadA)} / ${Math.round(r.loadB)}<small>kgf</small></div>${fixLoad?`<div class="fix">→ ${fixLoad}</div>`:''}</div>
-    <div class="card ${okSF?'ok':'ng'}"><div class="sl">荷重時の張力・安全率（${S.limSF}以上）</div><div class="sv">${Math.round(r.T)}<small>kgf</small> ${r.sf.toFixed(1)}<small>倍</small></div>${fixSF?`<div class="fix">→ ${fixSF}</div>`:''}</div>
+    <div class="card ${okSF?'ok':'ng'}"><div class="sl">荷重時の張力＝車両フック・安全率（${S.limSF}以上）${S.rope==='double'?'　2本合計。偏り6:4なら片方 '+Math.round(r.T*0.6)+'kgf':''}</div><div class="sv">${Math.round(r.T)}<small>kgf</small> ${r.sf.toFixed(1)}<small>倍</small></div>${fixSF?`<div class="fix">→ ${fixSF}</div>`:''}</div>
     <div class="card ${r.clearC>=S.limClear-0.5?'':'ng'}"><div class="sl">時間が経った後（乗ったまま・緩み ${S.creep.toFixed(1)}%）</div><div class="sv">${Math.round(r.sagC*100)}<small>cm</small> ${Math.round(r.Tc)}<small>kgf</small></div><div class="fix" style="color:var(--dim)">地上高 ${Math.round(r.clearC)}cm</div></div>
+    <div class="card ${Math.max(r.shk.loadA,r.shk.loadB)>S.limLoad+0.5||r.shk.clear<S.limClear-0.5?'ng':''}" style="grid-column:1/-1"><div class="sl">衝撃 ${S.drop}cm 落ちた瞬間（${ROPE[S.rope].n}）</div><div class="sv">${Math.round(r.shk.T)}<small>kgf（車両フック）</small> ${Math.round(r.shk.loadA)} / ${Math.round(r.shk.loadB)}<small>kgf（支点A/B）</small></div><div class="fix" style="color:var(--dim)">一瞬の沈み ${Math.round(r.shk.h*100)}cm・地上高 ${Math.round(r.shk.clear)}cm ／ 静かに乗った時の${(r.shk.T/r.T).toFixed(1)}倍。硬いロープほど支点に、柔らかいロープほど地上高に厳しい</div></div>
     <div class="card"><div class="sl">降ろした後の張力計（無負荷）</div><div class="sv">${Math.round(r.Tun)}<small>kgf</small></div><div class="fix" style="color:var(--dim)">展張力から −${Math.round(S.T0-r.Tun)}kgf。展張力まで再展張すれば戻る</div></div>`;
   draw(r);
 }

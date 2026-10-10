@@ -92,8 +92,8 @@ footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400p
   <div class="grp">荷重とロープ</div>
   <div class="ctl"><div class="hd"><span class="nm">吊る重さ<small>隊員＋要救助者</small></span><span class="vl" id="vW">150 kg</span></div><input type="range" id="w" min="50" max="250" step="5" value="150"></div>
   <div class="ctl"><div class="hd"><span class="nm">ロープ</span><span class="vl" id="vRope">伸び19%</span></div>
-    <div class="seg" id="ropeSeg"><button data-k="19" data-n="三つ打ちナイロン" class="on">三つ打ち</button><button data-k="0.3" data-n="ワイヤー">ワイヤー</button></div></div>
-  <div class="ctl"><div class="hd"><span class="nm">展張力</span><span class="vl" id="vT">700 kgf</span></div><input type="range" id="t" min="200" max="700" step="10" value="700"></div>
+    <div class="seg" id="ropeSeg"><button data-k="19" data-n="三つ打ち1本" class="on">1本</button><button data-k="9.5" data-n="三つ打ち2本張り（合計）">2本</button><button data-k="2.2" data-n="スタティック11mm">スタ11</button><button data-k="1.6" data-n="スタティック12.5mm">スタ12.5</button><button data-k="0.3" data-n="ワイヤー">ワイヤー</button></div></div>
+  <div class="ctl"><div class="hd"><span class="nm">展張力</span><span class="vl" id="vT">700 kgf</span></div><input type="range" id="t" min="200" max="1400" step="10" value="700"></div>
   <div class="ctl"><div class="hd"><span class="nm">吊り下げ長<small>ロープ〜お尻</small></span><span class="vl" id="vSus">100 cm</span></div><input type="range" id="sus" min="50" max="150" step="5" value="100"></div>
 </div>
 
@@ -111,7 +111,7 @@ footer{font-size:11.5px;color:var(--faint);padding:4px 16px 16px;max-width:1400p
   <div class="card verdict" id="verdict"></div>
 </div>
 </main>
-<footer>ロープの伸び率：三つ打ちナイロン12mmは当隊実測（700kgfで19%）、ワイヤーはほぼ伸びないとして、展張後ウインチ固定で計算。示すのは目安の数値で、活動を決めるものではない。判断は現場指揮者が行う。</footer>
+<footer>ロープの伸び率：三つ打ちナイロン12mmは当隊実測（700kgfで19%）、スタティックはJDR資料（MBSの10%荷重で1%＝硬い側）から700kgfでの伸びを推定。2本張りは2本合計の張力で、2本は均等に張れず6:4程度に偏る前提。ワイヤーはほぼ伸びないとして、展張後ウインチ固定で計算。示すのは目安の数値で、活動を決めるものではない。判断は現場指揮者が行う。</footer>
 
 <script>
 (function(){
